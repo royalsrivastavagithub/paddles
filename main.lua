@@ -11,12 +11,6 @@ local gameMode = nil
 local difficulty = nil
 settingsData = {}
 
-local bgBall = {
-    x = 640, y = 360,
-    dx = 200, dy = 150,
-    size = 20,
-}
-
 function love.load()
     love.window.setTitle("PONG")
     math.randomseed(os.time())
@@ -45,26 +39,6 @@ function love.load()
 end
 
 function love.update(dt)
-    local bg = settingsData.bgColor or {r=0, g=0, b=0}
-    if not (bg.r == 0 and bg.g == 0 and bg.b == 0) then
-        bgBall.dx = 250
-        bgBall.dy = 180
-    else
-        bgBall.dx = 200
-        bgBall.dy = 150
-    end
-
-    bgBall.x = bgBall.x + bgBall.dx * dt
-    bgBall.y = bgBall.y + bgBall.dy * dt
-    if bgBall.x <= 0 or bgBall.x + bgBall.size >= VIRTUAL_WIDTH then
-        bgBall.dx = -bgBall.dx
-        bgBall.x = math.max(0, math.min(bgBall.x, VIRTUAL_WIDTH - bgBall.size))
-    end
-    if bgBall.y <= 0 or bgBall.y + bgBall.size >= VIRTUAL_HEIGHT then
-        bgBall.dy = -bgBall.dy
-        bgBall.y = math.max(0, math.min(bgBall.y, VIRTUAL_HEIGHT - bgBall.size))
-    end
-
     if state == "menu" then
         menu.update(dt)
     elseif state == "playing" then
@@ -87,11 +61,6 @@ function love.draw()
 
     local bg = settingsData.bgColor or {r=0, g=0, b=0}
     love.graphics.setBackgroundColor(bg.r, bg.g, bg.b)
-
-    if state ~= "playing" then
-        love.graphics.setColor(1, 1, 1, 0.06)
-        love.graphics.rectangle("fill", bgBall.x, bgBall.y, bgBall.size, bgBall.size)
-    end
 
     if state == "menu" then
         menu.draw()
