@@ -32,6 +32,9 @@ function love.load()
         scoreColor = {r=1, g=1, b=1},
     }
     loadSettings()
+    if settingsData.fullscreen then
+        love.window.setFullscreen(true, "desktop")
+    end
 
     input.load()
     menu.load()
