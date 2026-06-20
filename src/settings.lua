@@ -322,7 +322,7 @@ function resetAllSettings()
         maxFPS = 0,
         bgColor = {r=0.05, g=0.05, b=0.05},
         menuColor = {r=1, g=1, b=1},
-        selectedColor = {r=1, g=1, b=0},
+        selectedColor = {r=1, g=1, b=1},
         paddle1Color = {r=1, g=1, b=1},
         paddle2Color = {r=1, g=1, b=1},
         ballColor = {r=1, g=1, b=1},
