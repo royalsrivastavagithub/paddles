@@ -14,7 +14,7 @@ local frameTimer = 0
 settingsData = {}
 
 function love.load()
-    love.window.setTitle("PONG")
+    love.window.setTitle("Paddles")
     love.keyboard.setKeyRepeat(true)
     math.randomseed(os.time())
 
