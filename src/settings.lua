@@ -43,20 +43,22 @@ local stickTimer = 0
 local stickDelay = 0.2
 local visibleRange = 13
 local dragIndex = nil
+local scrollDrag = false
 
 local function buildItems()
     items = {
-        { label = "P1 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 2.0, step = 0.1, key = "p1Sensitivity" },
-        { label = "P2 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 2.0, step = 0.1, key = "p2Sensitivity" },
-        { label = "Ball Speed",       type = "slider", value = 1.0, min = 0.5, max = 5.0, step = 0.1, key = "ballSpeed" },
+        { label = "P1 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 10.0, step = 0.1, key = "p1Sensitivity" },
+        { label = "P2 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 10.0, step = 0.1, key = "p2Sensitivity" },
+        { label = "Ball Speed",       type = "cycle",  value = "Normal", options = {"Slow", "Normal", "Fast"}, key = "ballSpeed" },
         { label = "Winning Score",    type = "cycle",  value = 7,   options = {3, 5, 7, 11, 21, 0}, key = "winningScore" },
         { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen"}, key = "displayMode" },
         { label = "Resolution",       type = "cycle",  value = "Display Native", options = {"Display Native", "720p (1280x720)", "1080p (1920x1080)", "1440p (2560x1440)", "4K (3840x2160)"}, key = "resolution" },
         { label = "VSync",            type = "toggle", value = true,  key = "vSync" },
         { label = "Max FPS",          type = "cycle",  value = 0,     options = {0, 30, 60, 120, 144, 165, 240, 360, 480, 1024}, key = "maxFPS" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
-        { label = "--- Game ---",     type = "header" },
-        { label = "Reset Settings",   type = "action", action = "resetSettings" },
+        { label = "Mouse Control",    type = "toggle", value = true,  key = "mouseControl" },
+        { label = "Font Size",        type = "slider", value = 1.0, min = 0.6, max = 1.8, step = 0.1, key = "uiScale" },
+
     }
     for _, group in ipairs(colorGroups) do
         table.insert(items, { label = "--- " .. group.label .. " ---", type = "header" })
@@ -65,6 +67,8 @@ local function buildItems()
             table.insert(items, { label = ch:upper(), type = "slider", value = math.min(1, maxVal), min = 0, max = maxVal, step = 0.01, key = group.key, channel = ch })
         end
     end
+    table.insert(items, { label = "--- Reset ---", type = "header" })
+    table.insert(items, { label = "Reset Settings", type = "action", action = "resetSettings" })
     table.insert(items, { label = "Back", type = "action", action = "back" })
 end
 buildItems()
@@ -128,6 +132,16 @@ function settings.exit()
     end
 end
 
+function moveSelection(dir)
+    local old = selectedIndex
+    repeat
+        selectedIndex = math.max(1, math.min(#items, selectedIndex + dir))
+        if selectedIndex == old then break end
+        old = selectedIndex
+    until items[selectedIndex].type ~= "header"
+    scrollToSelected()
+end
+
 function settings.update(dt)
     stickTimer = math.max(0, stickTimer - dt)
     if stickTimer > 0 then return end
@@ -139,15 +153,16 @@ function settings.update(dt)
     local ly = gp:getGamepadAxis("lefty")
     local lx = gp:getGamepadAxis("leftx")
 
-    if ly < -0.5 then selectedIndex = math.max(1, selectedIndex - 1); scrollToSelected(); stickTimer = stickDelay
-    elseif ly > 0.5 then selectedIndex = math.min(#items, selectedIndex + 1); scrollToSelected(); stickTimer = stickDelay
+    if ly < -0.5 then moveSelection(-1); stickTimer = stickDelay
+    elseif ly > 0.5 then moveSelection(1); stickTimer = stickDelay
     elseif lx < -0.5 then adjustSetting("left"); stickTimer = stickDelay * 0.5
     elseif lx > 0.5 then adjustSetting("right"); stickTimer = stickDelay * 0.5 end
 end
 
 function settings.draw()
-    local titleFont = love.graphics.newFont("assets/fonts/font.ttf", 40)
-    local itemFont = love.graphics.newFont("assets/fonts/font.ttf", 22)
+    local us = _G.settingsData.uiScale or 1.0
+    local titleFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(40 * us))
+    local itemFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(22 * us))
 
     love.graphics.setFont(titleFont)
     local mc = _G.settingsData.menuColor or {r=1, g=1, b=1}
@@ -177,11 +192,7 @@ function settings.draw()
                     if item.key == "maxFPS" and item.value == 0 then valStr = "Unlimited" end
                     display = item.label .. ": " .. valStr
                 elseif item.type == "slider" then
-                    local valDisplay = string.format("%.2f", item.value)
-                    if item.key == "ballSpeed" and item.value >= item.max then
-                        valDisplay = valDisplay .. "  Are you crazy?!"
-                    end
-                    display = item.label .. ": " .. valDisplay
+                    display = item.label .. ": " .. string.format("%.2f", item.value)
                 elseif item.type == "toggle" then
                     display = item.label .. ": " .. (item.value and "ON" or "OFF")
                 end
@@ -206,16 +217,29 @@ function settings.draw()
                         local color = _G.settingsData[item.key] or {r=0, g=0, b=0}
                         love.graphics.setColor(color.r, color.g, color.b)
                         love.graphics.rectangle("fill", barX + barW + 10, barY - 4, 18, 18)
-                    end
-                end
             end
         end
+    end
+
+    -- scrollbar
+    local sbTop = 115
+    local sbBottom = 115 + visibleRange * 45 - 10
+    local sbHeight = sbBottom - sbTop
+    love.graphics.setColor(0.3, 0.3, 0.3)
+    love.graphics.rectangle("fill", WINDOW_WIDTH - 15, sbTop, 8, sbHeight)
+    if #items > visibleRange then
+        local thumbHeight = sbHeight * visibleRange / #items
+        local thumbY = sbTop + (sbHeight - thumbHeight) * scrollOffset / (#items - visibleRange)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("fill", WINDOW_WIDTH - 15, thumbY, 8, thumbHeight)
+    end
+end
     end
 end
 
 function settings.keypressed(key)
-    if key == "up" then selectedIndex = math.max(1, selectedIndex - 1); scrollToSelected()
-    elseif key == "down" then selectedIndex = math.min(#items, selectedIndex + 1); scrollToSelected()
+    if key == "up" then moveSelection(-1)
+    elseif key == "down" then moveSelection(1)
     elseif key == "left" or key == "right" then adjustSetting(key)
     elseif key == "return" or key == " " then
         local item = items[selectedIndex]
@@ -228,8 +252,8 @@ function settings.keypressed(key)
 end
 
 function settings.gamepadpressed(joystick, button)
-    if button == "dpup" then selectedIndex = math.max(1, selectedIndex - 1); scrollToSelected()
-    elseif button == "dpdown" then selectedIndex = math.min(#items, selectedIndex + 1); scrollToSelected()
+    if button == "dpup" then moveSelection(-1)
+    elseif button == "dpdown" then moveSelection(1)
     elseif button == "dpleft" then adjustSetting("left")
     elseif button == "dpright" then adjustSetting("right")
     elseif button == "a" then
@@ -244,6 +268,21 @@ end
 
 function settings.mousepressed(x, y, button)
     if button ~= 1 then return end
+    -- scrollbar hit
+    local sbX, sbW = WINDOW_WIDTH - 15, 8
+    local sbTop, sbBottom = 115, 115 + visibleRange * 45 - 10
+    if x >= sbX and x <= sbX + sbW and y >= sbTop and y <= sbBottom and #items > visibleRange then
+        local sbHeight = sbBottom - sbTop
+        local thumbHeight = sbHeight * visibleRange / #items
+        local thumbY = sbTop + (sbHeight - thumbHeight) * scrollOffset / (#items - visibleRange)
+        if y >= thumbY and y <= thumbY + thumbHeight then
+            scrollDrag = true
+            scrollToY(y, sbTop, sbHeight, thumbHeight)
+        else
+            scrollToY(y, sbTop, sbHeight, thumbHeight)
+        end
+        return
+    end
     for i, item in ipairs(items) do
         if item.type ~= "header" then
             local itemY = 115 + (i - 1 - scrollOffset) * 45
@@ -270,7 +309,23 @@ function settings.mousepressed(x, y, button)
     end
 end
 
+function scrollToY(y, sbTop, sbHeight, thumbHeight)
+    local raw = (y - sbTop - thumbHeight / 2) / (sbHeight - thumbHeight)
+    local newOffset = math.floor(raw * (#items - visibleRange) + 0.5)
+    scrollOffset = math.max(0, math.min(#items - visibleRange, newOffset))
+    selectedIndex = math.max(1, math.min(#items, scrollOffset + 1))
+    scrollToSelected()
+end
+
 function settings.mousemoved(x, y)
+    if scrollDrag then
+        local sbTop, sbBottom = 115, 115 + visibleRange * 45 - 10
+        local sbHeight = sbBottom - sbTop
+        local thumbHeight = sbHeight * visibleRange / #items
+        scrollToY(y, sbTop, sbHeight, thumbHeight)
+        return
+    end
+
     for i, item in ipairs(items) do
         if item.type ~= "header" then
             local itemY = 115 + (i - 1 - scrollOffset) * 45
@@ -295,6 +350,7 @@ end
 
 function settings.mousereleased()
     dragIndex = nil
+    scrollDrag = false
 end
 
 function settings.wheelmoved(y)
@@ -313,11 +369,13 @@ function resetAllSettings()
         difficulty = "medium",
         p1Sensitivity = 1.0,
         p2Sensitivity = 1.0,
-        ballSpeed = 1.0,
+        ballSpeed = "Normal",
         displayMode = "Windowed",
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
+        mouseControl = true,
+        uiScale = 1.0,
         vSync = true,
         maxFPS = 0,
         bgColor = {r=0.05, g=0.05, b=0.05},

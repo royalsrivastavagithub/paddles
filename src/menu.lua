@@ -6,6 +6,7 @@ local WINDOW_HEIGHT = 720
 local items = {
     { label = "Singleplayer", action = "singleplayer" },
     { label = "Multiplayer",   action = "multiplayer" },
+    { label = "Bot vs Bot",      action = "aivsai" },
     { label = "Settings",      action = "settings" },
     { label = "Exit",          action = "exit" },
 }
@@ -66,7 +67,8 @@ function menu.draw()
     local mc = _G.settingsData.menuColor or {r=1, g=1, b=1}
     local sc = _G.settingsData.selectedColor or {r=1, g=1, b=0}
 
-    local font = love.graphics.newFont("assets/fonts/font.ttf", 64)
+    local us = _G.settingsData.uiScale or 1.0
+    local font = love.graphics.newFont("assets/fonts/font.ttf", math.floor(64 * us))
     love.graphics.setFont(font)
     love.graphics.setColor(mc.r, mc.g, mc.b)
     local titleW = font:getWidth("PONG")
@@ -80,7 +82,8 @@ function menu.draw()
 end
 
 function drawMenuItems(list, selectedIdx, startY, menuColor, selectedColor)
-    local font = love.graphics.newFont("assets/fonts/font.ttf", 36)
+    local us = _G.settingsData.uiScale or 1.0
+    local font = love.graphics.newFont("assets/fonts/font.ttf", math.floor(36 * us))
     love.graphics.setFont(font)
 
     for i, item in ipairs(list) do
@@ -153,6 +156,7 @@ end
 function handleMainAction(action)
     if action == "singleplayer" then showingDifficulty = true; difficultySelectedIndex = 1
     elseif action == "multiplayer" then startGame("multiplayer", nil)
+    elseif action == "aivsai" then startAISelect()
     elseif action == "settings" then startSettings()
     elseif action == "exit" then love.event.quit() end
 end

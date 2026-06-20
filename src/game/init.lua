@@ -31,6 +31,10 @@ local scoreFont = nil
 local messageFont = nil
 local godLosePhase = nil
 local godLoseTimer = 0
+local totalLives = 0
+local remainingLives = 0
+local aiDiff1 = nil
+local aiDiff2 = nil
 
 function game.enter(m, d, sd)
     mode = m
@@ -56,10 +60,25 @@ function game.enter(m, d, sd)
     speedTimer = 0
     godLosePhase = nil
     godLoseTimer = 0
+    totalLives = settingsData.paddleLives or 0
+    remainingLives = totalLives
+    aiDiff1 = nil
+    aiDiff2 = nil
     ai.reset()
 
-    scoreFont = love.graphics.newFont("assets/fonts/font.ttf", 48)
-    messageFont = love.graphics.newFont("assets/fonts/font.ttf", 36)
+    if mode == "singleplayer" then
+        entities.setAngleRange(paddle2, difficulty)
+    elseif mode == "aivsai" then
+        aiDiff1 = d.p1 or "easy"
+        aiDiff2 = d.p2 or "easy"
+        entities.setAngleRange(paddle1, aiDiff1)
+        entities.setAngleRange(paddle2, aiDiff2)
+        serveBall()
+    end
+
+    local us = settingsData.uiScale or 1.0
+    scoreFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(48 * us))
+    messageFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(36 * us))
 end
 
 function game.exit()
@@ -109,10 +128,10 @@ function game.update(dt)
             if godLoseTimer <= 0 then
                 if godLosePhase == 1 then
                     godLosePhase = 2
-                    godLoseTimer = 1.5
+                    godLoseTimer = 3
                 elseif godLosePhase == 2 then
                     godLosePhase = 3
-                    godLoseTimer = 1.5
+                    godLoseTimer = 3
                 else
                     love.event.quit()
                 end
@@ -124,7 +143,7 @@ function game.update(dt)
     speedTimer = speedTimer + dt
     if speedTimer >= entities.SPEED_INCREASE_INTERVAL then
         speedTimer = 0
-        ball.speed = math.min(ball.speed + entities.SPEED_INCREASE_AMOUNT, entities.MAX_BALL_SPEED)
+        ball.speed = ball.speed + entities.SPEED_INCREASE_AMOUNT
     end
 
     updatePaddle1(dt)
@@ -133,7 +152,16 @@ function game.update(dt)
 end
 
 function updatePaddle1(dt)
-    if input.isP1Up() then
+    if mode == "aivsai" then
+        ai.update(paddle1, ball, aiDiff1 or "easy", dt, WINDOW_HEIGHT, paddle2.dy, true)
+    elseif settingsData.mouseControl then
+        local screenW, screenH = love.graphics.getDimensions()
+        local scale = math.min(screenW / 1280, screenH / 720)
+        local offsetY = (screenH - 720 * scale) / 2
+        local mouseY = (love.mouse.getY() - offsetY) / scale
+        paddle1.y = entities.clamp(mouseY - paddle1.height / 2, 0, WINDOW_HEIGHT - paddle1.height)
+        paddle1.dy = 0
+    elseif input.isP1Up() then
         paddle1.dy = -paddle1.speed
     elseif input.isP1Down() then
         paddle1.dy = paddle1.speed
@@ -146,6 +174,8 @@ end
 function updatePaddle2(dt)
     if mode == "singleplayer" then
         ai.update(paddle2, ball, difficulty, dt, WINDOW_HEIGHT, paddle1.dy)
+    elseif mode == "aivsai" then
+        ai.update(paddle2, ball, aiDiff2 or "easy", dt, WINDOW_HEIGHT, paddle1.dy)
     else
         if input.isP2Up() then
             paddle2.dy = -paddle2.speed
@@ -159,19 +189,35 @@ function updatePaddle2(dt)
 end
 
 function updateBall(dt)
-    local result = entities.updateBall(ball, paddle1, paddle2, dt, WINDOW_WIDTH, WINDOW_HEIGHT)
+    local result, hitP2, hitP1 = entities.updateBall(ball, paddle1, paddle2, dt, WINDOW_WIDTH, WINDOW_HEIGHT)
     if result == "right_score" then
         paddle2.score = paddle2.score + 1
+        if mode == "singleplayer" and difficulty == "god" and totalLives > 0 then
+            remainingLives = totalLives
+        end
         checkWin()
     elseif result == "left_score" then
         paddle1.score = paddle1.score + 1
         checkWin()
     end
+
+    if mode == "singleplayer" and difficulty == "god" and totalLives > 0 and hitP1 and remainingLives > 0 then
+        remainingLives = remainingLives - 1
+        if remainingLives <= 0 then
+            startPaddleDeath()
+        end
+    end
+end
+
+function startPaddleDeath()
+    state = "gameover"
+    godLosePhase = 1
+    godLoseTimer = 3
 end
 
 function startGodLose()
     godLosePhase = 1
-    godLoseTimer = 1.5
+    godLoseTimer = 3
 end
 
 function startCountdown()
@@ -182,7 +228,8 @@ end
 function serveBall()
     ball.x = WINDOW_WIDTH / 2 - entities.BALL_SIZE / 2
     ball.y = WINDOW_HEIGHT / 2 - entities.BALL_SIZE / 2
-    ball.speed = entities.BALL_SPEED * (settingsData.ballSpeed or 1.0)
+    local speedMap = {Slow = 0.5, Normal = 1.0, Fast = 2.0}
+    ball.speed = entities.BALL_SPEED * (speedMap[settingsData.ballSpeed] or 1.0)
 
     local angle = math.rad(math.random(-30, 30))
     local dir = -1
@@ -202,11 +249,18 @@ function checkWin()
         state = "gameover"
     else
         entities.resetPositions(paddle1, paddle2, ball, WINDOW_WIDTH, WINDOW_HEIGHT)
-        state = "serve"
-        servePhase = "waiting"
-        serveP1Ready = false
-        serveP2Ready = false
-        serveTimer = serveDelay
+        if remainingLives > 0 then
+            paddle2.dead = false
+        end
+        if mode == "aivsai" then
+            serveBall()
+        else
+            state = "serve"
+            servePhase = "waiting"
+            serveP1Ready = false
+            serveP2Ready = false
+            serveTimer = serveDelay
+        end
     end
 end
 
@@ -221,17 +275,55 @@ function game.draw()
     love.graphics.setColor(bg.r, bg.g, bg.b)
     love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
+    if state == "gameover" and godLosePhase then
+        love.graphics.setFont(messageFont)
+        love.graphics.setColor(sel.r, sel.g, sel.b)
+        local msgs = {"WTF", "no way maan !", "i am out"}
+        local msg = msgs[godLosePhase]
+        love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 50)
+        if paused then
+            love.graphics.setColor(0, 0, 0, 180)
+            love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+            love.graphics.setFont(messageFont)
+            love.graphics.setColor(sel.r, sel.g, sel.b)
+            local pmsg = "PAUSED"
+            love.graphics.print(pmsg, (WINDOW_WIDTH - messageFont:getWidth(pmsg)) / 2, WINDOW_HEIGHT / 2 - 80)
+            for i, item in ipairs(pauseItems) do
+                local y = WINDOW_HEIGHT / 2 - 20 + (i - 1) * 50
+                if i == pauseSelection then
+                    love.graphics.setColor(sel.r, sel.g, sel.b)
+                    love.graphics.print("> " .. item, (WINDOW_WIDTH - messageFont:getWidth("> " .. item)) / 2, y)
+                else
+                    love.graphics.setColor(1, 1, 1)
+                    love.graphics.print(item, (WINDOW_WIDTH - messageFont:getWidth(item)) / 2, y)
+                end
+            end
+        end
+        return
+    end
+
     love.graphics.setFont(scoreFont)
     if difficulty == "god" then
         love.graphics.setColor(sc.r, sc.g, sc.b)
         local p2Text = "EZ: " .. paddle2.score
         love.graphics.print(p2Text, WINDOW_WIDTH / 2 + 100 - scoreFont:getWidth(p2Text) / 2, 30)
+        if paddle2.dead then
+            local p1Text = tostring(paddle1.score)
+            love.graphics.print(p1Text, WINDOW_WIDTH / 2 - 100 - scoreFont:getWidth(p1Text) / 2, 30)
+        end
     else
         love.graphics.setColor(sc.r, sc.g, sc.b)
         local p1Text = tostring(paddle1.score)
         local p2Text = tostring(paddle2.score)
         love.graphics.print(p1Text, WINDOW_WIDTH / 2 - 100 - scoreFont:getWidth(p1Text) / 2, 30)
         love.graphics.print(p2Text, WINDOW_WIDTH / 2 + 100 - scoreFont:getWidth(p2Text) / 2, 30)
+    end
+
+    if mode == "singleplayer" and difficulty == "god" and totalLives > 0 then
+        love.graphics.setColor(1, 0.2, 0.2)
+        love.graphics.setFont(scoreFont)
+        local livesText = remainingLives .. "/" .. totalLives
+        love.graphics.print(livesText, WINDOW_WIDTH - scoreFont:getWidth(livesText) - 20, 30)
     end
 
     love.graphics.setColor(0.4, 0.4, 0.4)
@@ -241,8 +333,10 @@ function game.draw()
 
     love.graphics.setColor(p1c.r, p1c.g, p1c.b)
     love.graphics.rectangle("fill", paddle1.x, paddle1.y, paddle1.width, paddle1.height)
-    love.graphics.setColor(p2c.r, p2c.g, p2c.b)
-    love.graphics.rectangle("fill", paddle2.x, paddle2.y, paddle2.width, paddle2.height)
+    if not paddle2.dead then
+        love.graphics.setColor(p2c.r, p2c.g, p2c.b)
+        love.graphics.rectangle("fill", paddle2.x, paddle2.y, paddle2.width, paddle2.height)
+    end
     love.graphics.setColor(bc.r, bc.g, bc.b)
     love.graphics.rectangle("fill", ball.x, ball.y, ball.width, ball.height)
 
@@ -274,23 +368,19 @@ function game.draw()
     if state == "gameover" then
         love.graphics.setFont(messageFont)
         love.graphics.setColor(sel.r, sel.g, sel.b)
-        if difficulty == "god" and godLosePhase then
-            local msgs = {"WTF", "no way", "i am out"}
-            local msg = msgs[godLosePhase]
+        if difficulty == "god" then
+            local msg = "Bot Win!"
             love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 50)
-        elseif difficulty == "god" then
-            local msg = "AI Wins!"
-            love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 50)
-            local sub = "Press Enter or A to continue"
+            local sub = "Press any key to continue"
             love.graphics.setColor(1, 1, 1)
             love.graphics.print(sub, (WINDOW_WIDTH - messageFont:getWidth(sub)) / 2, WINDOW_HEIGHT / 2 + 20)
         else
-            local winner = "Player 1 Wins!"
+            local winner = "Player Wins!"
             if paddle2.score > paddle1.score then
-                winner = mode == "singleplayer" and "AI Wins!" or "Player 2 Wins!"
+                winner = mode == "singleplayer" and "Bot Win" or "Player 2 Wins!"
             end
             love.graphics.print(winner, (WINDOW_WIDTH - messageFont:getWidth(winner)) / 2, WINDOW_HEIGHT / 2 - 50)
-            local msg = "Press Enter or A to continue"
+            local msg = "Press any key to continue"
             love.graphics.setColor(1, 1, 1)
             love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 + 20)
         end

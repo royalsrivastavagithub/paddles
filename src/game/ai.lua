@@ -1,115 +1,138 @@
 local entities = require("src.game.entities")
 
 local ai = {}
-local reactionTimer = 0
-local targetOffset = 0
-local fixedTargetY = nil
-local moveSpeed = 0
-local deadZonePx = 0
 
 function ai.reset()
-    reactionTimer = 0
-    targetOffset = (math.random() * 2 - 1) * 0.4
-    fixedTargetY = nil
 end
 
-function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy)
-    local coming = ball.dx > 0
+function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy, isLeft)
+    if not paddle.aiState then
+        paddle.aiState = {reactionTimer = 0}
+    end
+    local st = paddle.aiState
+
+    if st.lastDifficulty ~= difficulty then
+        st.reactionTimer = 0
+        st.fixedTargetY = nil
+        st.targetOffset = nil
+        st.lastDifficulty = difficulty
+    end
+
+    local coming
+    if isLeft then
+        coming = ball.dx < 0
+    else
+        coming = ball.dx > 0
+    end
 
     if not coming then
-        reactionTimer = 0
-        fixedTargetY = nil
-        if difficulty == "god" then
-            paddle.dy = 0
-        else
+        st.reactionTimer = 0
+        st.fixedTargetY = nil
+        st.sendStraight = math.random() < 0.15
+        if difficulty ~= "god" then
             local mult = difficulty == "hard" and 0.5 or 0.45
             moveTowardCenter(paddle, arenaH, mult)
+        else
+            paddle.dy = 0
         end
         return
     end
 
     if difficulty == "easy" then
-        local speedFactor = (ball.speed - entities.BALL_SPEED) / (entities.MAX_BALL_SPEED - entities.BALL_SPEED)
+        local speedFactor = math.min((ball.speed - entities.BALL_SPEED) / 5000, 1)
         speedFactor = entities.clamp(speedFactor, 0, 1)
 
-        if reactionTimer == 0 then
-            local offsetRange = paddle.height * (0.15 + speedFactor * 0.4)
-            fixedTargetY = (math.random() - 0.5) * offsetRange
-            moveSpeed = paddle.speed * (0.7 - speedFactor * 0.3)
-            deadZonePx = paddle.height * (0.05 + speedFactor * 0.35)
+        if st.reactionTimer == 0 then
+            if st.sendStraight then
+                st.fixedTargetY = 0
+            else
+                local offsetRange = paddle.height * (0.15 + speedFactor * 0.4)
+                st.fixedTargetY = (math.random() - 0.5) * offsetRange
+            end
+            st.moveSpeed = paddle.speed * (0.7 - speedFactor * 0.3)
+            st.deadZonePx = paddle.height * (0.05 + speedFactor * 0.35)
         end
 
-        reactionTimer = reactionTimer + dt
+        st.reactionTimer = st.reactionTimer + dt
         local reactDelay = 0.05 + speedFactor * 0.25
-        if reactionTimer < reactDelay then
+        if st.reactionTimer < reactDelay then
             paddle.dy = 0
             return
         end
 
         local ballY = ball.y + ball.height / 2
-        local targetY = ballY + fixedTargetY
+        local targetY = ballY + st.fixedTargetY
         local diff = targetY - (paddle.y + paddle.height / 2)
-        if math.abs(diff) > deadZonePx then
-            paddle.dy = entities.clamp(diff / math.max(deadZonePx, 1), -1, 1) * moveSpeed
+        if math.abs(diff) > st.deadZonePx then
+            paddle.dy = entities.clamp(diff / math.max(st.deadZonePx, 1), -1, 1) * st.moveSpeed
         else
             paddle.dy = 0
         end
     elseif difficulty == "medium" then
-        if reactionTimer == 0 then
-            fixedTargetY = (math.random() - 0.5) * paddle.height * 0.2
-            moveSpeed = paddle.speed * 0.8
-            deadZonePx = paddle.height * 0.08
+        if st.reactionTimer == 0 then
+            if st.sendStraight then
+                st.fixedTargetY = 0
+            else
+                st.fixedTargetY = (math.random() - 0.5) * paddle.height * 0.2
+            end
+            st.moveSpeed = paddle.speed * 0.8
+            st.deadZonePx = paddle.height * 0.08
         end
-        reactionTimer = 1
+        st.reactionTimer = 1
 
         local ballY = ball.y + ball.height / 2
-        local targetY = ballY + fixedTargetY
+        local targetY = ballY + st.fixedTargetY
         local diff = targetY - (paddle.y + paddle.height / 2)
-        if math.abs(diff) > deadZonePx then
-            paddle.dy = entities.clamp(diff / 20, -1, 1) * moveSpeed
+        if math.abs(diff) > st.deadZonePx then
+            paddle.dy = entities.clamp(diff / 20, -1, 1) * st.moveSpeed
         else
             paddle.dy = 0
         end
     elseif difficulty == "hard" then
-        if reactionTimer == 0 then
-            if math.abs(playerDy) > 30 then
-                targetOffset = playerDy < 0 and 0.6 or -0.6
+        if st.reactionTimer == 0 then
+            if st.sendStraight then
+                st.targetOffset = 0
+            elseif math.abs(playerDy) > 30 then
+                st.targetOffset = playerDy < 0 and 0.6 or -0.6
             else
-                targetOffset = (math.random() > 0.5 and 0.7 or -0.7)
+                st.targetOffset = (math.random() > 0.5 and 0.7 or -0.7)
             end
-            fixedTargetY = nil
-            moveSpeed = paddle.speed * 0.9
-            deadZonePx = 10
+            st.fixedTargetY = nil
+            st.moveSpeed = paddle.speed * 0.9
+            st.deadZonePx = 10
         end
-        reactionTimer = 1
+        st.reactionTimer = 1
 
-        local predictedY = predictBallArrival(ball, paddle.x, arenaH)
+        local predictedY = predictBallArrival(ball, paddle.x, arenaH, isLeft)
         if predictedY then
-            local rawTarget = predictedY - (paddle.height / 2) * (targetOffset + 1)
-            if fixedTargetY == nil then
-                fixedTargetY = rawTarget
+            local rawTarget = predictedY - (paddle.height / 2) * (st.targetOffset + 1)
+            if st.fixedTargetY == nil then
+                st.fixedTargetY = rawTarget
             else
-                fixedTargetY = fixedTargetY + (rawTarget - fixedTargetY) * math.min(1, dt * 15)
+                st.fixedTargetY = st.fixedTargetY + (rawTarget - st.fixedTargetY) * math.min(1, dt * 15)
             end
-            local diff = fixedTargetY - paddle.y
-            if math.abs(diff) > deadZonePx then
-                paddle.dy = entities.clamp(diff / 25, -1, 1) * moveSpeed
+            local diff = st.fixedTargetY - paddle.y
+            if math.abs(diff) > st.deadZonePx then
+                paddle.dy = entities.clamp(diff / 25, -1, 1) * st.moveSpeed
             else
                 paddle.dy = 0
             end
         end
     else
-        local predictedY = predictBallArrival(ball, paddle.x, arenaH)
-        if predictedY then
-            local dir = 1
-            if math.abs(playerDy) > 30 then
-                dir = playerDy < 0 and 1 or -1
+        if st.reactionTimer == 0 then
+            if st.sendStraight then
+                st.aimDir = 0
+            elseif math.abs(playerDy) > 30 then
+                st.aimDir = playerDy < 0 and 1 or -1
             else
-                dir = math.random() > 0.5 and 1 or -1
+                st.aimDir = math.random() > 0.5 and 1 or -1
             end
-            local aimOffset = dir
-            local paddleCenter = predictedY - aimOffset * (paddle.height / 2)
-            paddle.y = paddleCenter - paddle.height / 2
+        end
+        st.reactionTimer = 1
+
+        local predictedY = predictBallArrival(ball, paddle.x, arenaH, isLeft)
+        if predictedY then
+            paddle.y = predictedY - st.aimDir * (paddle.height / 2) - paddle.height / 2
         end
         paddle.dy = 0
     end
@@ -125,20 +148,29 @@ function moveTowardCenter(paddle, arenaH, speedMult)
     end
 end
 
-function predictBallArrival(ball, paddleX, arenaH)
-    if ball.dx <= 0 then return nil end
+function predictBallArrival(ball, paddleX, arenaH, isLeft)
+    if isLeft then
+        if ball.dx >= 0 then return nil end
+    else
+        if ball.dx <= 0 then return nil end
+    end
     local time = (paddleX - ball.x) / ball.dx
     if time <= 0 then return nil end
-    local y = ball.y + ball.height / 2 + ball.dy * time
+    local halfBall = ball.height / 2
+    local range = arenaH - ball.height
+    local y = ball.y + halfBall + ball.dy * time
+    y = y - halfBall
     if y < 0 then y = -y end
-    if y > arenaH then
-        local bounces = math.floor(y / arenaH)
+    if y > range then
+        local bounces = math.floor(y / range)
+        local rem = y % range
         if bounces % 2 == 0 then
-            y = y % arenaH
+            y = rem
         else
-            y = arenaH - (y % arenaH)
+            y = range - rem
         end
     end
+    y = y + halfBall
     return y
 end
 

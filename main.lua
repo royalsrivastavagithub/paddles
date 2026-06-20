@@ -2,6 +2,7 @@ local menu = require("src.menu")
 local game = require("src.game.init")
 local settings = require("src.settings")
 local input = require("src.input")
+local aiselect = require("src.aiselect")
 
 local VIRTUAL_WIDTH = 1280
 local VIRTUAL_HEIGHT = 720
@@ -21,11 +22,13 @@ function love.load()
         difficulty = "medium",
         p1Sensitivity = 1.0,
         p2Sensitivity = 1.0,
-        ballSpeed = 1.0,
+        ballSpeed = "Normal",
         displayMode = "Windowed",
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
+        mouseControl = false,
+        uiScale = 1.0,
         vSync = true,
         maxFPS = 0,
         bgColor = {r=0.05, g=0.05, b=0.05},
@@ -55,6 +58,8 @@ function love.update(dt)
         game.update(dt)
     elseif state == "settings" then
         settings.update(dt)
+    elseif state == "aiselect" then
+        aiselect.update(dt)
     end
 end
 
@@ -90,6 +95,8 @@ function love.draw()
         game.draw()
     elseif state == "settings" then
         settings.draw()
+    elseif state == "aiselect" then
+        aiselect.draw()
     end
 
     love.graphics.pop()
@@ -103,6 +110,8 @@ function love.keypressed(key)
         game.keypressed(key)
     elseif state == "settings" then
         settings.keypressed(key)
+    elseif state == "aiselect" then
+        aiselect.keypressed(key)
     end
 end
 
@@ -113,6 +122,8 @@ function love.gamepadpressed(joystick, button)
         game.gamepadpressed(joystick, button)
     elseif state == "settings" then
         settings.gamepadpressed(joystick, button)
+    elseif state == "aiselect" then
+        aiselect.gamepadpressed(joystick, button)
     end
 end
 
@@ -136,6 +147,8 @@ function love.mousepressed(sx, sy, button)
         menu.mousepressed(x, y, button)
     elseif state == "settings" then
         settings.mousepressed(x, y, button)
+    elseif state == "aiselect" then
+        aiselect.mousepressed(x, y, button)
     end
 end
 
@@ -151,6 +164,8 @@ function love.mousemoved(sx, sy, dx, dy, istouch)
         menu.mousemoved(x, y)
     elseif state == "settings" then
         settings.mousemoved(x, y)
+    elseif state == "aiselect" then
+        aiselect.mousemoved(x, y)
     end
 end
 
@@ -178,7 +193,7 @@ function switchState(newState)
 
     state = newState
 
-    if state == "menu" or state == "settings" then
+    if state == "menu" or state == "settings" or state == "aiselect" then
         love.mouse.setVisible(true)
     elseif state == "playing" then
         love.mouse.setVisible(false)
@@ -190,18 +205,33 @@ function switchState(newState)
         game.enter(gameMode, difficulty, settingsData)
     elseif state == "settings" then
         settings.enter()
+    elseif state == "aiselect" then
+        aiselect.enter()
     end
 end
 
 function startGame(mode, diff)
     gameMode = mode
-    difficulty = diff or settingsData.difficulty
+    if mode == "aivsai" then
+        local pool = {"easy", "medium", "hard", "god"}
+        local p1d = diff and diff.p1 or pool[math.random(#pool)]
+        local p2d = diff and diff.p2 or pool[math.random(#pool)]
+        if p1d == "random" then p1d = pool[math.random(#pool)] end
+        if p2d == "random" then p2d = pool[math.random(#pool)] end
+        difficulty = {p1 = p1d, p2 = p2d}
+    else
+        difficulty = diff or settingsData.difficulty
+    end
     input.setSplitMode(settingsData.splitController)
     switchState("playing")
 end
 
 function startSettings()
     switchState("settings")
+end
+
+function startAISelect()
+    switchState("aiselect")
 end
 
 function backToMenu()
@@ -232,10 +262,8 @@ function loadSettings()
     if f then
         local ok, saved = pcall(f)
         if ok and saved then
-            for k, v in pairs(settingsData) do
-                if saved[k] ~= nil then
-                    settingsData[k] = saved[k]
-                end
+            for k, v in pairs(saved) do
+                settingsData[k] = v
             end
         end
     end

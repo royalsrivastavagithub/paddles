@@ -10,7 +10,6 @@ entities.PADDLE_OFFSET = 50
 entities.BALL_SIZE = 15
 entities.BALL_SPEED = 350
 entities.BALL_SPEED_INCREASE = 1.02
-entities.MAX_BALL_SPEED = 2000
 entities.SPEED_INCREASE_INTERVAL = 5
 entities.SPEED_INCREASE_AMOUNT = 15
 
@@ -23,6 +22,9 @@ function entities.newPaddle(x, y, speedMult)
         speed = entities.PADDLE_SPEED * speedMult,
         score = 0,
         dy = 0,
+        dead = false,
+        minAngle = math.rad(0),
+        maxAngle = math.rad(65),
     }
 end
 
@@ -53,35 +55,67 @@ function entities.movePaddle(paddle, dt, arenaH)
 end
 
 function entities.updateBall(ball, p1, p2, dt, arenaW, arenaH)
+    local prevX = ball.x
+    local prevY = ball.y
     ball.x = ball.x + ball.dx * dt
     ball.y = ball.y + ball.dy * dt
 
     if ball.y <= 0 then
         ball.y = 0
         ball.dy = -ball.dy
+        local newSpeed = ball.speed * entities.BALL_SPEED_INCREASE
+        local factor = newSpeed / ball.speed
+        ball.speed = newSpeed
+        ball.dx = ball.dx * factor
+        ball.dy = ball.dy * factor
     elseif ball.y + ball.height >= arenaH then
         ball.y = arenaH - ball.height
         ball.dy = -ball.dy
+        local newSpeed = ball.speed * entities.BALL_SPEED_INCREASE
+        local factor = newSpeed / ball.speed
+        ball.speed = newSpeed
+        ball.dx = ball.dx * factor
+        ball.dy = ball.dy * factor
     end
 
+    local hitP2 = false
+    local hitP1 = false
     if ball.dx < 0 then
         if entities.checkCollision(ball, p1) then
             ball.x = p1.x + p1.width
             entities.reflectBall(ball, p1, 1)
+            hitP1 = true
+        elseif prevX > p1.x + p1.width and ball.x < p1.x + p1.width then
+            local ballY1 = math.min(prevY, ball.y)
+            local ballY2 = math.max(prevY + ball.height, ball.y + ball.height)
+            if ballY1 < p1.y + p1.height and ballY2 > p1.y then
+                ball.x = p1.x + p1.width
+                entities.reflectBall(ball, p1, 1)
+                hitP1 = true
+            end
         end
     else
-        if entities.checkCollision(ball, p2) then
+        if not p2.dead and entities.checkCollision(ball, p2) then
             ball.x = p2.x - ball.width
             entities.reflectBall(ball, p2, -1)
+            hitP2 = true
+        elseif not p2.dead and prevX + ball.width < p2.x and ball.x + ball.width > p2.x then
+            local ballY1 = math.min(prevY, ball.y)
+            local ballY2 = math.max(prevY + ball.height, ball.y + ball.height)
+            if ballY1 < p2.y + p2.height and ballY2 > p2.y then
+                ball.x = p2.x - ball.width
+                entities.reflectBall(ball, p2, -1)
+                hitP2 = true
+            end
         end
     end
 
     if ball.x + ball.width < 0 then
-        return "right_score"
+        return "right_score", hitP2, hitP1
     elseif ball.x > arenaW then
-        return "left_score"
+        return "left_score", hitP2, hitP1
     end
-    return nil
+    return nil, hitP2, hitP1
 end
 
 function entities.checkCollision(a, b)
@@ -94,12 +128,22 @@ function entities.reflectBall(ball, paddle, dir)
     local offset = (ballCenter - paddleCenter) / (paddle.height / 2)
     offset = entities.clamp(offset, -1, 1)
 
-    local maxAngle = math.rad(65)
-    local angle = offset * maxAngle
-    ball.speed = math.min(ball.speed * entities.BALL_SPEED_INCREASE, entities.MAX_BALL_SPEED)
+    local angle = (paddle.minAngle + math.abs(offset) * (paddle.maxAngle - paddle.minAngle)) * (offset >= 0 and 1 or -1)
+    ball.speed = ball.speed * entities.BALL_SPEED_INCREASE
 
     ball.dx = dir * math.cos(angle) * ball.speed
     ball.dy = math.sin(angle) * ball.speed
+end
+
+function entities.setAngleRange(paddle, diff)
+    local angles = {
+        god    = 75,
+        hard   = 65,
+        medium = 55,
+        easy   = 45,
+    }
+    paddle.minAngle = math.rad(0)
+    paddle.maxAngle = math.rad(angles[diff] or 65)
 end
 
 function entities.clamp(val, min, max)
