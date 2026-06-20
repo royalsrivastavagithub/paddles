@@ -61,7 +61,8 @@ local function buildItems()
     for _, group in ipairs(colorGroups) do
         table.insert(items, { label = "--- " .. group.label .. " ---", type = "header" })
         for _, ch in ipairs(channels) do
-            table.insert(items, { label = ch:upper(), type = "slider", value = 1, min = 0, max = 1, step = 0.01, key = group.key, channel = ch })
+            local maxVal = group.key == "bgColor" and 0.5 or 1
+            table.insert(items, { label = ch:upper(), type = "slider", value = math.min(1, maxVal), min = 0, max = maxVal, step = 0.01, key = group.key, channel = ch })
         end
     end
     table.insert(items, { label = "Back", type = "action", action = "back" })
@@ -96,16 +97,18 @@ function settings.enter()
     scrollOffset = 0
     stickTimer = 0
     dragIndex = nil
+    buildItems()
     for _, item in ipairs(items) do
         if item.key and item.channel then
             local color = _G.settingsData[item.key]
-            if color then item.value = color[item.channel] end
+            if color then
+                item.value = math.min(item.max, color[item.channel])
+            end
         elseif item.key then
             local val = _G.settingsData[item.key]
             if val ~= nil then item.value = val end
         end
     end
-    buildItems()
 end
 
 function settings.exit()
@@ -313,7 +316,7 @@ function resetAllSettings()
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
-        bgColor = {r=0, g=0, b=0},
+        bgColor = {r=0.05, g=0.05, b=0.05},
         menuColor = {r=1, g=1, b=1},
         selectedColor = {r=1, g=1, b=0},
         paddle1Color = {r=1, g=1, b=1},

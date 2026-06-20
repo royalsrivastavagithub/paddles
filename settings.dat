@@ -1,5 +1,6 @@
 return {
   resolution = "Display Native",
+  paddle2Color = {r=1.000, g=1.000, b=1.000},
   winningScore = 7,
   splitController = false,
   bgColor = {r=1.000, g=1.000, b=1.000},
@@ -12,6 +13,5 @@ return {
   p1Sensitivity = 1,
   p2Sensitivity = 1,
   ballSpeed = 1,
-  displayMode = "Windowed",
-  paddle2Color = {r=1.000, g=1.000, b=1.000},
+  displayMode = "Fullscreen",
 }

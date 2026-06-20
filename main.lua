@@ -25,7 +25,7 @@ function love.load()
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
-        bgColor = {r=0, g=0, b=0},
+        bgColor = {r=0.05, g=0.05, b=0.05},
         menuColor = {r=1, g=1, b=1},
         selectedColor = {r=1, g=1, b=0},
         paddle1Color = {r=1, g=1, b=1},
@@ -34,6 +34,9 @@ function love.load()
         scoreColor = {r=1, g=1, b=1},
     }
     loadSettings()
+    settingsData.bgColor.r = math.min(0.5, settingsData.bgColor.r)
+    settingsData.bgColor.g = math.min(0.5, settingsData.bgColor.g)
+    settingsData.bgColor.b = math.min(0.5, settingsData.bgColor.b)
     settings.applyDisplayModeRes()
 
     input.load()
