@@ -257,6 +257,15 @@ function settings.mousereleased()
     dragIndex = nil
 end
 
+function settings.wheelmoved(y)
+    if y > 0 then
+        selectedIndex = math.max(1, selectedIndex - 1)
+    elseif y < 0 then
+        selectedIndex = math.min(#items, selectedIndex + 1)
+    end
+    scrollToSelected()
+end
+
 function adjustSetting(dir)
     local item = items[selectedIndex]
     if item.type == "slider" then

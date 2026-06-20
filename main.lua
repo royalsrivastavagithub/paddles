@@ -142,6 +142,12 @@ function love.mousereleased(sx, sy, button)
     end
 end
 
+function love.wheelmoved(x, y)
+    if state == "settings" then
+        settings.wheelmoved(y)
+    end
+end
+
 function switchState(newState)
     if state == "playing" then
         game.exit()
