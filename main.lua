@@ -66,6 +66,14 @@ function love.gamepadpressed(joystick, button)
     end
 end
 
+function love.joystickadded(joystick)
+    input.refresh()
+end
+
+function love.joystickremoved(joystick)
+    input.refresh()
+end
+
 function love.mousepressed(x, y, button)
     if state == "menu" then
         menu.mousepressed(x, y, button)
