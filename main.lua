@@ -122,13 +122,16 @@ function love.mousepressed(sx, sy, button)
 end
 
 function love.mousemoved(sx, sy, dx, dy, istouch)
-    if state == "settings" then
-        local screenW, screenH = love.graphics.getDimensions()
-        local scale = math.min(screenW / VIRTUAL_WIDTH, screenH / VIRTUAL_HEIGHT)
-        local offsetX = (screenW - VIRTUAL_WIDTH * scale) / 2
-        local offsetY = (screenH - VIRTUAL_HEIGHT * scale) / 2
-        local x = (sx - offsetX) / scale
-        local y = (sy - offsetY) / scale
+    local screenW, screenH = love.graphics.getDimensions()
+    local scale = math.min(screenW / VIRTUAL_WIDTH, screenH / VIRTUAL_HEIGHT)
+    local offsetX = (screenW - VIRTUAL_WIDTH * scale) / 2
+    local offsetY = (screenH - VIRTUAL_HEIGHT * scale) / 2
+    local x = (sx - offsetX) / scale
+    local y = (sy - offsetY) / scale
+
+    if state == "menu" then
+        menu.mousemoved(x, y)
+    elseif state == "settings" then
         settings.mousemoved(x, y)
     end
 end

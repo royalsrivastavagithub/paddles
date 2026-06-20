@@ -231,6 +231,16 @@ function settings.mousepressed(x, y, button)
 end
 
 function settings.mousemoved(x, y)
+    for i, item in ipairs(items) do
+        if item.type ~= "header" then
+            local itemY = 115 + (i - 1 - scrollOffset) * 45
+            if y >= itemY and y <= itemY + 35 then
+                selectedIndex = i
+                break
+            end
+        end
+    end
+
     if dragIndex then
         local item = items[dragIndex]
         if item and item.type == "slider" then

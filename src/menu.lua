@@ -121,6 +121,16 @@ function menu.gamepadpressed(joystick, button)
     end
 end
 
+function menu.mousemoved(x, y)
+    if showingDifficulty then
+        local idx = hitTestMenuItems(difficultyItems, 300, y)
+        if idx then difficultySelectedIndex = idx end
+    else
+        local idx = hitTestMenuItems(items, 300, y)
+        if idx then selectedIndex = idx end
+    end
+end
+
 function menu.mousepressed(x, y, button)
     if button ~= 1 then return end
     if showingDifficulty then
