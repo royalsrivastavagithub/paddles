@@ -35,11 +35,11 @@ function input.isMenuDown(action)
     return false
 end
 
-function input.isP1Down()
+function input.isP1Up()
     return love.keyboard.isDown("w") or isGamepadDown(1, "leftstickup") or isGamepadDown(1, "dpup")
 end
 
-function input.isP1Up()
+function input.isP1Down()
     return love.keyboard.isDown("s") or isGamepadDown(1, "leftstickdown") or isGamepadDown(1, "dpdown")
 end
 

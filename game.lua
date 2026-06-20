@@ -189,18 +189,12 @@ function updateBall(dt)
     if ball.dx < 0 then
         if checkCollision(ball, paddle1) then
             ball.x = paddle1.x + paddle1.width
-            ball.dx = -ball.dx
-            ball.dy = calculateReflection(ball, paddle1)
-            ball.speed = math.min(ball.speed * BALL_SPEED_INCREASE, MAX_BALL_SPEED)
-            normalizeBallSpeed()
+            reflectBall(paddle1)
         end
     else
         if checkCollision(ball, paddle2) then
             ball.x = paddle2.x - ball.width
-            ball.dx = -ball.dx
-            ball.dy = calculateReflection(ball, paddle2)
-            ball.speed = math.min(ball.speed * BALL_SPEED_INCREASE, MAX_BALL_SPEED)
-            normalizeBallSpeed()
+            reflectBall(paddle2)
         end
     end
 
@@ -217,21 +211,22 @@ function checkCollision(a, b)
     return a.x < b.x + b.width and a.x + a.width > b.x and a.y < b.y + b.height and a.y + a.height > b.y
 end
 
-function calculateReflection(ballObj, paddle)
-    local ballCenter = ballObj.y + ballObj.height / 2
+function reflectBall(paddle)
+    local ballCenter = ball.y + ball.height / 2
     local paddleCenter = paddle.y + paddle.height / 2
     local offset = (ballCenter - paddleCenter) / (paddle.height / 2)
     offset = clamp(offset, -1, 1)
-    return offset * 200
-end
 
-function normalizeBallSpeed()
-    local currentSpeed = math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
-    if currentSpeed > 0 then
-        local ratio = ball.speed / currentSpeed
-        ball.dx = ball.dx * ratio
-        ball.dy = ball.dy * ratio
-    end
+    local maxAngle = math.rad(65)
+    local angle = offset * maxAngle
+
+    ball.speed = math.min(ball.speed * BALL_SPEED_INCREASE, MAX_BALL_SPEED)
+
+    local dir = 1
+    if paddle == paddle2 then dir = -1 end
+
+    ball.dx = dir * math.cos(angle) * ball.speed
+    ball.dy = math.sin(angle) * ball.speed
 end
 
 function serveBall()
@@ -239,11 +234,15 @@ function serveBall()
     ball.y = WINDOW_HEIGHT / 2 - BALL_SIZE / 2
     ball.speed = BALL_SPEED * (settingsData.ballSpeed or 1.0)
 
-    local angle = math.rad(math.random(-45, 45))
-    local dir = 1
-    if math.random() < 0.5 then dir = -1 end
+    local angle = math.rad(math.random(-30, 30))
+    local dir = -1
+    if paddle1.score + paddle2.score == 0 then
+        if math.random() < 0.5 then dir = 1 end
+    elseif paddle2.score > paddle1.score then
+        dir = 1
+    end
 
-    ball.dx = math.cos(angle) * ball.speed * dir
+    ball.dx = dir * math.cos(angle) * ball.speed
     ball.dy = math.sin(angle) * ball.speed
 
     state = "playing"
