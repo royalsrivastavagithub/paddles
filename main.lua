@@ -18,6 +18,7 @@ function love.load()
         ballSpeed = 1.0,
         fullscreen = false,
         winningScore = 7,
+        splitController = false,
     }
 
     input.load()
@@ -105,6 +106,7 @@ end
 function startGame(mode, diff)
     gameMode = mode
     difficulty = diff or settingsData.difficulty
+    input.setSplitMode(settingsData.splitController)
     switchState("playing")
 end
 
@@ -113,10 +115,6 @@ function startSettings()
 end
 
 function backToMenu()
-    if settingsData.fullscreen then
-        love.window.setFullscreen(true)
-    else
-        love.window.setFullscreen(false)
-    end
     switchState("menu")
+    love.window.setFullscreen(settingsData.fullscreen)
 end

@@ -4,12 +4,12 @@ local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
 
 local items = {
-    { label = "Difficulty",          type = "cycle",  value = "medium", options = {"easy", "medium", "hard"}, key = "difficulty" },
-    { label = "Paddle Speed",        type = "slider", value = 1.0,     min = 0.5, max = 2.0, step = 0.1,        key = "paddleSpeed" },
-    { label = "Ball Speed",          type = "slider", value = 1.0,     min = 0.5, max = 2.0, step = 0.1,        key = "ballSpeed" },
-    { label = "Winning Score",       type = "slider", value = 7,       min = 1,   max = 21, step = 1,          key = "winningScore" },
-    { label = "Fullscreen",          type = "toggle", value = false,                                                key = "fullscreen" },
-    { label = "Back",                type = "action", action = "back" },
+    { label = "Paddle Speed",        type = "slider",  value = 1.0, min = 0.5, max = 2.0, step = 0.1,        key = "paddleSpeed" },
+    { label = "Ball Speed",          type = "slider",  value = 1.0, min = 0.5, max = 2.0, step = 0.1,        key = "ballSpeed" },
+    { label = "Winning Score",       type = "cycle",   value = 7,   options = {3, 5, 7, 11, 21, 0},           key = "winningScore" },
+    { label = "Fullscreen",          type = "toggle",  value = false,                                           key = "fullscreen" },
+    { label = "Split Controller",    type = "toggle",  value = false,                                           key = "splitController" },
+    { label = "Back",                type = "action",  action = "back" },
 }
 
 local selectedIndex = 1
@@ -60,7 +60,9 @@ function settings.draw()
 
         local display = item.label
         if item.type == "cycle" then
-            display = item.label .. ": " .. item.value:sub(1, 1):upper() .. item.value:sub(2)
+            local valStr = tostring(item.value)
+            if item.value == 0 then valStr = "∞" end
+            display = item.label .. ": " .. valStr
         elseif item.type == "slider" then
             display = item.label .. ": " .. item.value
         elseif item.type == "toggle" then

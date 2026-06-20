@@ -344,7 +344,7 @@ function serveBall()
 end
 
 function checkWin()
-    if paddle1.score >= WINNING_SCORE or paddle2.score >= WINNING_SCORE then
+    if WINNING_SCORE > 0 and (paddle1.score >= WINNING_SCORE or paddle2.score >= WINNING_SCORE) then
         state = "gameover"
     else
         resetPositions()
@@ -480,16 +480,6 @@ function game.keypressed(key)
         return
     end
 
-    if key == "escape" then
-        if state == "gameover" then
-            backToMenu()
-        else
-            paused = true
-            pauseSelection = 1
-        end
-        return
-    end
-
     if state == "serve" and servePhase == "waiting" then
         if mode == "singleplayer" then
             startCountdown()
@@ -502,6 +492,16 @@ function game.keypressed(key)
             if serveP1Ready and serveP2Ready then
                 startCountdown()
             end
+        end
+        return
+    end
+
+    if key == "escape" then
+        if state == "gameover" then
+            backToMenu()
+        elseif state ~= "serve" then
+            paused = true
+            pauseSelection = 1
         end
         return
     end
@@ -529,25 +529,24 @@ function game.gamepadpressed(joystick, button)
         return
     end
 
-    if button == "start" then
-        if state == "gameover" then
-            backToMenu()
-        else
-            paused = true
-            pauseSelection = 1
-        end
-        return
-    end
-
     if state == "serve" and servePhase == "waiting" then
         if mode == "singleplayer" then
             startCountdown()
         else
             local jsticks = love.joystick.getJoysticks()
-            if joystick == jsticks[1] or #jsticks == 1 then
-                serveP1Ready = true
-            elseif joystick == jsticks[2] then
-                serveP2Ready = true
+            if settingsData.splitController and #jsticks >= 1 then
+                if isSplitP1Ready(joystick, button) then
+                    serveP1Ready = true
+                end
+                if isSplitP2Ready(joystick, button) then
+                    serveP2Ready = true
+                end
+            else
+                if joystick == jsticks[1] or #jsticks == 1 then
+                    serveP1Ready = true
+                elseif joystick == jsticks[2] then
+                    serveP2Ready = true
+                end
             end
             if serveP1Ready and serveP2Ready then
                 startCountdown()
@@ -556,9 +555,27 @@ function game.gamepadpressed(joystick, button)
         return
     end
 
+    if button == "start" then
+        if state == "gameover" then
+            backToMenu()
+        elseif state ~= "serve" then
+            paused = true
+            pauseSelection = 1
+        end
+        return
+    end
+
     if state == "gameover" and button == "a" then
         backToMenu()
     end
+end
+
+function isSplitP1Ready(joystick, button)
+    return button == "dpup" or button == "dpdown" or button == "leftstickup" or button == "leftstickdown"
+end
+
+function isSplitP2Ready(joystick, button)
+    return button == "y" or button == "a"
 end
 
 function clamp(val, min, max)

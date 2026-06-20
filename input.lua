@@ -1,6 +1,7 @@
 local input = {}
 
 local gamepads = {}
+local splitMode = false
 
 function input.load()
     gamepads = love.joystick.getJoysticks()
@@ -8,6 +9,10 @@ end
 
 function input.refresh()
     gamepads = love.joystick.getJoysticks()
+end
+
+function input.setSplitMode(enabled)
+    splitMode = enabled
 end
 
 function input.anyPressed()
@@ -22,33 +27,28 @@ function input.anyPressed()
     return false
 end
 
-function input.isMenuDown(action)
-    if action == "up" then
-        return love.keyboard.isDown("up") or isAnyGamepadDown("dpup") or isAnyGamepadDown("leftstickup")
-    elseif action == "down" then
-        return love.keyboard.isDown("down") or isAnyGamepadDown("dpdown") or isAnyGamepadDown("leftstickdown")
-    elseif action == "confirm" then
-        return love.keyboard.isDown("return") or love.keyboard.isDown(" ") or isAnyGamepadDown("a")
-    elseif action == "back" then
-        return love.keyboard.isDown("escape") or isAnyGamepadDown("b")
-    end
-    return false
-end
-
 function input.isP1Up()
-    return love.keyboard.isDown("w") or isGamepadDown(1, "leftstickup") or isGamepadDown(1, "dpup")
+    return love.keyboard.isDown("w") or isGamepadDown(1, "dpup") or isGamepadDown(1, "leftstickup")
 end
 
 function input.isP1Down()
-    return love.keyboard.isDown("s") or isGamepadDown(1, "leftstickdown") or isGamepadDown(1, "dpdown")
-end
-
-function input.isP2Down()
-    return love.keyboard.isDown("down") or isGamepadDown(2, "leftstickup") or isGamepadDown(2, "dpup")
+    return love.keyboard.isDown("s") or isGamepadDown(1, "dpdown") or isGamepadDown(1, "leftstickdown")
 end
 
 function input.isP2Up()
-    return love.keyboard.isDown("up") or isGamepadDown(2, "leftstickdown") or isGamepadDown(2, "dpdown")
+    if love.keyboard.isDown("up") then return true end
+    if splitMode and #gamepads >= 1 then
+        return isGamepadDown(1, "y") or getRightStickY(1) < -0.5
+    end
+    return isGamepadDown(2, "dpup") or isGamepadDown(2, "leftstickup")
+end
+
+function input.isP2Down()
+    if love.keyboard.isDown("down") then return true end
+    if splitMode and #gamepads >= 1 then
+        return isGamepadDown(1, "a") or getRightStickY(1) > 0.5
+    end
+    return isGamepadDown(2, "dpdown") or isGamepadDown(2, "leftstickdown")
 end
 
 function input.isPause()
@@ -67,6 +67,13 @@ function isGamepadDown(index, button)
         return gamepads[index]:isGamepadDown(button)
     end
     return false
+end
+
+function getRightStickY(index)
+    if index <= #gamepads then
+        return gamepads[index]:getGamepadAxis("righty")
+    end
+    return 0
 end
 
 return input
