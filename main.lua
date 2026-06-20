@@ -21,7 +21,8 @@ function love.load()
         p1Sensitivity = 1.0,
         p2Sensitivity = 1.0,
         ballSpeed = 1.0,
-        fullscreen = false,
+        displayMode = "Windowed",
+        resolution = "Display Native",
         winningScore = 7,
         splitController = false,
         bgColor = {r=0, g=0, b=0},
@@ -33,9 +34,7 @@ function love.load()
         scoreColor = {r=1, g=1, b=1},
     }
     loadSettings()
-    if settingsData.fullscreen then
-        love.window.setFullscreen(true, "desktop")
-    end
+    settings.applyDisplayModeRes()
 
     input.load()
     menu.load()
@@ -188,12 +187,7 @@ end
 
 function backToMenu()
     switchState("menu")
-    if settingsData.fullscreen then
-        love.window.setFullscreen(true, "desktop")
-    else
-        love.window.setFullscreen(false)
-        love.window.setMode(1280, 720)
-    end
+    settings.applyDisplayModeRes()
 end
 
 function saveSettings()

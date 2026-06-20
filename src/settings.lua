@@ -1,8 +1,32 @@
 local settings = {}
 local input = require("src.input")
+local history = require("src.history")
 
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
+
+local resolutionMap = {
+    ["Display Native"] = { w = 0, h = 0 },
+    ["720p (1280x720)"] = { w = 1280, h = 720 },
+    ["1080p (1920x1080)"] = { w = 1920, h = 1080 },
+    ["1440p (2560x1440)"] = { w = 2560, h = 1440 },
+    ["4K (3840x2160)"] = { w = 3840, h = 2160 },
+}
+
+local function applyDisplayModeRes()
+    local mode = _G.settingsData.displayMode or "Windowed"
+    local resKey = _G.settingsData.resolution or "Display Native"
+    local res = resolutionMap[resKey] or resolutionMap["Display Native"]
+    if mode == "Windowed" then
+        love.window.setFullscreen(false)
+        if res.w > 0 and res.h > 0 then love.window.setMode(res.w, res.h)
+        else love.window.setMode(1280, 720) end
+    elseif mode == "Fullscreen" then
+        love.window.setFullscreen(true, "exclusive")
+    else
+        love.window.setFullscreen(true, "desktop")
+    end
+end
 
 local colorGroups = {
     { key = "bgColor",     label = "Background" },
@@ -29,8 +53,12 @@ local function buildItems()
         { label = "P2 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 2.0, step = 0.1, key = "p2Sensitivity" },
         { label = "Ball Speed",       type = "slider", value = 1.0, min = 0.5, max = 5.0, step = 0.1, key = "ballSpeed" },
         { label = "Winning Score",    type = "cycle",  value = 7,   options = {3, 5, 7, 11, 21, 0}, key = "winningScore" },
-        { label = "Fullscreen",       type = "toggle", value = false, key = "fullscreen" },
+        { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen", "Borderless"}, key = "displayMode" },
+        { label = "Resolution",       type = "cycle",  value = "Display Native", options = {"Display Native", "720p (1280x720)", "1080p (1920x1080)", "1440p (2560x1440)", "4K (3840x2160)"}, key = "resolution" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
+        { label = "--- Game ---",     type = "header" },
+        { label = "Clear History",    type = "action", action = "clearHistory" },
+        { label = "Reset Settings",   type = "action", action = "resetSettings" },
     }
     for _, group in ipairs(colorGroups) do
         table.insert(items, { label = "--- " .. group.label .. " ---", type = "header" })
@@ -49,9 +77,8 @@ local function applyItem(item)
         _G.settingsData[item.key][item.channel] = item.value
     else
         _G.settingsData[item.key] = item.value
-        if item.key == "fullscreen" then
-            if item.value then love.window.setFullscreen(true, "desktop")
-            else love.window.setFullscreen(false); love.window.setMode(1280, 720) end
+        if item.key == "displayMode" or item.key == "resolution" then
+            applyDisplayModeRes()
         elseif item.key == "splitController" then
             input.setSplitMode(item.value)
         end
@@ -80,6 +107,7 @@ function settings.enter()
             if val ~= nil then item.value = val end
         end
     end
+    buildItems()
 end
 
 function settings.exit()
@@ -185,7 +213,10 @@ function settings.keypressed(key)
     elseif key == "left" or key == "right" then adjustSetting(key)
     elseif key == "return" or key == " " then
         local item = items[selectedIndex]
-        if item.type == "action" and item.action == "back" then backToMenu()
+        if item.type == "action" then
+            if item.action == "back" then backToMenu()
+            elseif item.action == "clearHistory" then history.clear()
+            elseif item.action == "resetSettings" then resetAllSettings() end
         elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
         elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
     elseif key == "escape" then backToMenu() end
@@ -198,7 +229,10 @@ function settings.gamepadpressed(joystick, button)
     elseif button == "dpright" then adjustSetting("right")
     elseif button == "a" then
         local item = items[selectedIndex]
-        if item.type == "action" and item.action == "back" then backToMenu()
+        if item.type == "action" then
+            if item.action == "back" then backToMenu()
+            elseif item.action == "clearHistory" then history.clear()
+            elseif item.action == "resetSettings" then resetAllSettings() end
         elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
         elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
     elseif button == "b" then backToMenu() end
@@ -221,7 +255,10 @@ function settings.mousepressed(x, y, button)
                         applyItem(item)
                         dragIndex = i
                     end
-                    elseif item.type == "action" and item.action == "back" then backToMenu()
+                    elseif item.type == "action" then
+                        if item.action == "back" then backToMenu()
+                        elseif item.action == "clearHistory" then history.clear()
+                        elseif item.action == "resetSettings" then resetAllSettings() end
                 elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
                 elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
                 return
@@ -264,6 +301,32 @@ function settings.wheelmoved(y)
         selectedIndex = math.min(#items, selectedIndex + 1)
     end
     scrollToSelected()
+end
+
+settings.applyDisplayModeRes = applyDisplayModeRes
+
+function resetAllSettings()
+    _G.settingsData = {
+        difficulty = "medium",
+        p1Sensitivity = 1.0,
+        p2Sensitivity = 1.0,
+        ballSpeed = 1.0,
+        displayMode = "Windowed",
+        resolution = "Display Native",
+        winningScore = 7,
+        splitController = false,
+        bgColor = {r=0, g=0, b=0},
+        menuColor = {r=1, g=1, b=1},
+        selectedColor = {r=1, g=1, b=0},
+        paddle1Color = {r=1, g=1, b=1},
+        paddle2Color = {r=1, g=1, b=1},
+        ballColor = {r=1, g=1, b=1},
+        scoreColor = {r=1, g=1, b=1},
+    }
+    applyDisplayModeRes()
+    input.setSplitMode(false)
+    saveSettings()
+    settings.enter()
 end
 
 function adjustSetting(dir)
