@@ -20,6 +20,7 @@ local scrollOffset = 0
 local stickTimer = 0
 local stickDelay = 0.2
 local visibleRange = 13
+local dragIndex = nil
 
 local function buildItems()
     items = {
@@ -52,6 +53,7 @@ function settings.enter()
     selectedIndex = 1
     scrollOffset = 0
     stickTimer = 0
+    dragIndex = nil
     for _, item in ipairs(items) do
         if item.key and item.channel then
             local color = _G.settingsData[item.key]
@@ -192,13 +194,38 @@ function settings.mousepressed(x, y, button)
             local itemY = 115 + (i - 1 - scrollOffset) * 45
             if y >= itemY and y <= itemY + 35 then
                 selectedIndex = i
-                if item.type == "action" and item.action == "back" then backToMenu()
+                if item.type == "slider" then
+                    local barX, barW = 620, 350
+                    local barY = itemY + 5
+                    if x >= barX and x <= barX + barW and y >= barY and y <= barY + 10 then
+                        local fill = (x - barX) / barW
+                        item.value = item.min + fill * (item.max - item.min)
+                        item.value = math.max(item.min, math.min(item.max, item.value))
+                        dragIndex = i
+                    end
+                elseif item.type == "action" and item.action == "back" then backToMenu()
                 elseif item.type == "toggle" then item.value = not item.value
                 elseif item.type == "cycle" then cycleItem(item, 1) end
                 return
             end
         end
     end
+end
+
+function settings.mousemoved(x, y)
+    if dragIndex then
+        local item = items[dragIndex]
+        if item and item.type == "slider" then
+            local barX, barW = 620, 350
+            local fill = (x - barX) / barW
+            item.value = item.min + fill * (item.max - item.min)
+            item.value = math.max(item.min, math.min(item.max, item.value))
+        end
+    end
+end
+
+function settings.mousereleased()
+    dragIndex = nil
 end
 
 function adjustSetting(dir)

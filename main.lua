@@ -13,6 +13,7 @@ settingsData = {}
 
 function love.load()
     love.window.setTitle("PONG")
+    love.keyboard.setKeyRepeat(true)
     math.randomseed(os.time())
 
     settingsData = {
@@ -117,6 +118,24 @@ function love.mousepressed(sx, sy, button)
         menu.mousepressed(x, y, button)
     elseif state == "settings" then
         settings.mousepressed(x, y, button)
+    end
+end
+
+function love.mousemoved(sx, sy, dx, dy, istouch)
+    if state == "settings" then
+        local screenW, screenH = love.graphics.getDimensions()
+        local scale = math.min(screenW / VIRTUAL_WIDTH, screenH / VIRTUAL_HEIGHT)
+        local offsetX = (screenW - VIRTUAL_WIDTH * scale) / 2
+        local offsetY = (screenH - VIRTUAL_HEIGHT * scale) / 2
+        local x = (sx - offsetX) / scale
+        local y = (sy - offsetY) / scale
+        settings.mousemoved(x, y)
+    end
+end
+
+function love.mousereleased(sx, sy, button)
+    if state == "settings" then
+        settings.mousereleased()
     end
 end
 
