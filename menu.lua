@@ -74,19 +74,19 @@ function menu.draw()
     love.graphics.print("PONG", (WINDOW_WIDTH - titleW) / 2, 100)
 
     if showingDifficulty then
-        drawMenuItems(difficultyItems, difficultySelectedIndex, 300, mc)
+        drawMenuItems(difficultyItems, difficultySelectedIndex, 300, mc, sc)
     else
-        drawMenuItems(items, selectedIndex, 300, mc)
+        drawMenuItems(items, selectedIndex, 300, mc, sc)
     end
 end
 
-function drawMenuItems(list, selectedIdx, startY, menuColor)
+function drawMenuItems(list, selectedIdx, startY, menuColor, selectedColor)
     local font = love.graphics.newFont("font.ttf", 36)
     love.graphics.setFont(font)
 
     for i, item in ipairs(list) do
         if i == selectedIdx then
-            love.graphics.setColor(sc[1], sc[2], sc[3])
+            love.graphics.setColor(selectedColor[1], selectedColor[2], selectedColor[3])
             love.graphics.print("> " .. item.label, (WINDOW_WIDTH - font:getWidth("> " .. item.label)) / 2, startY + (i - 1) * 60)
         else
             love.graphics.setColor(menuColor[1], menuColor[2], menuColor[3])
