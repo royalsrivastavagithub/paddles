@@ -1,3 +1,5 @@
+local colors = require("colors")
+
 local menu = {}
 
 local WINDOW_WIDTH = 1280
@@ -62,30 +64,32 @@ function menu.update(dt)
 end
 
 function menu.draw()
-    love.graphics.setColor(1, 1, 1)
+    local mc = colors.get(_G.settingsData.menuColor or "white")
+    local sc = colors.get(_G.settingsData.selectedColor or "yellow")
 
-    local font = love.graphics.newFont(64)
+    local font = love.graphics.newFont("font.ttf", 64)
     love.graphics.setFont(font)
+    love.graphics.setColor(mc[1], mc[2], mc[3])
     local titleW = font:getWidth("PONG")
     love.graphics.print("PONG", (WINDOW_WIDTH - titleW) / 2, 100)
 
     if showingDifficulty then
-        drawMenuItems(difficultyItems, difficultySelectedIndex, 300)
+        drawMenuItems(difficultyItems, difficultySelectedIndex, 300, mc)
     else
-        drawMenuItems(items, selectedIndex, 300)
+        drawMenuItems(items, selectedIndex, 300, mc)
     end
 end
 
-function drawMenuItems(list, selectedIdx, startY)
-    local font = love.graphics.newFont(36)
+function drawMenuItems(list, selectedIdx, startY, menuColor)
+    local font = love.graphics.newFont("font.ttf", 36)
     love.graphics.setFont(font)
 
     for i, item in ipairs(list) do
         if i == selectedIdx then
-            love.graphics.setColor(1, 1, 0)
+            love.graphics.setColor(sc[1], sc[2], sc[3])
             love.graphics.print("> " .. item.label, (WINDOW_WIDTH - font:getWidth("> " .. item.label)) / 2, startY + (i - 1) * 60)
         else
-            love.graphics.setColor(1, 1, 1)
+            love.graphics.setColor(menuColor[1], menuColor[2], menuColor[3])
             love.graphics.print(item.label, (WINDOW_WIDTH - font:getWidth(item.label)) / 2, startY + (i - 1) * 60)
         end
     end

@@ -17,11 +17,18 @@ function love.load()
 
     settingsData = {
         difficulty = "medium",
-        paddleSpeed = 1.0,
+        p1Sensitivity = 1.0,
+        p2Sensitivity = 1.0,
         ballSpeed = 1.0,
         fullscreen = false,
         winningScore = 7,
         splitController = false,
+        menuColor = "white",
+        selectedColor = "yellow",
+        paddle1Color = "white",
+        paddle2Color = "white",
+        ballColor = "white",
+        scoreColor = "white",
     }
 
     input.load()

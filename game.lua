@@ -1,4 +1,5 @@
 local input = require("input")
+local colors = require("colors")
 
 local game = {}
 
@@ -13,7 +14,7 @@ local PADDLE_OFFSET = 50
 local BALL_SIZE = 15
 local BALL_SPEED = 350
 local BALL_SPEED_INCREASE = 1.02
-local MAX_BALL_SPEED = 800
+local MAX_BALL_SPEED = 2000
 local SPEED_INCREASE_INTERVAL = 5
 local SPEED_INCREASE_AMOUNT = 15
 
@@ -51,10 +52,11 @@ function game.enter(m, d, sd)
     settingsData = sd or {}
     WINNING_SCORE = settingsData.winningScore or 7
 
-    local ps = settingsData.paddleSpeed or 1.0
+    local p1s = settingsData.p1Sensitivity or 1.0
+    local p2s = settingsData.p2Sensitivity or 1.0
 
-    paddle1 = newPaddle(PADDLE_OFFSET, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, ps)
-    paddle2 = newPaddle(WINDOW_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, ps)
+    paddle1 = newPaddle(PADDLE_OFFSET, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, p1s)
+    paddle2 = newPaddle(WINDOW_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, p2s)
 
     ball = newBall()
     state = "serve"
@@ -69,8 +71,8 @@ function game.enter(m, d, sd)
     aiReactionTimer = 0
     aiTargetOffset = (math.random() * 2 - 1) * 0.4
 
-    scoreFont = love.graphics.newFont(48)
-    messageFont = love.graphics.newFont(36)
+    scoreFont = love.graphics.newFont("font.ttf", 48)
+    messageFont = love.graphics.newFont("font.ttf", 36)
 end
 
 function game.exit()
@@ -401,17 +403,16 @@ end
 function game.draw()
     love.graphics.setBackgroundColor(0, 0, 0)
 
-    if mode == "singleplayer" then
-        local label = "AI: " .. difficulty:sub(1, 1):upper() .. difficulty:sub(2)
-        love.graphics.setColor(0.4, 0.4, 0.4)
-        love.graphics.setFont(messageFont)
-        love.graphics.print(label, 20, 20)
-    end
+    local sc = colors.get(settingsData.selectedColor or "yellow")
+    local p1c = colors.get(settingsData.paddle1Color or "white")
+    local p2c = colors.get(settingsData.paddle2Color or "white")
+    local bc = colors.get(settingsData.ballColor or "white")
+    local sc = colors.get(settingsData.scoreColor or "white")
 
     love.graphics.setColor(0.2, 0.2, 0.2)
     love.graphics.rectangle("line", 2, 2, WINDOW_WIDTH - 4, WINDOW_HEIGHT - 4)
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(sc[1], sc[2], sc[3])
     love.graphics.setFont(scoreFont)
     local p1Text = tostring(paddle1.score)
     local p2Text = tostring(paddle2.score)
@@ -423,11 +424,13 @@ function game.draw()
         love.graphics.rectangle("fill", WINDOW_WIDTH / 2 - 2, i, 4, 12)
     end
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(p1c[1], p1c[2], p1c[3])
     love.graphics.rectangle("fill", paddle1.x, paddle1.y, paddle1.width, paddle1.height)
+
+    love.graphics.setColor(p2c[1], p2c[2], p2c[3])
     love.graphics.rectangle("fill", paddle2.x, paddle2.y, paddle2.width, paddle2.height)
 
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(bc[1], bc[2], bc[3])
     love.graphics.rectangle("fill", ball.x, ball.y, ball.width, ball.height)
 
     if state == "serve" then
@@ -450,7 +453,7 @@ function game.draw()
             local cd = math.ceil(serveTimer)
             if cd > 0 then
                 love.graphics.setFont(scoreFont)
-                love.graphics.setColor(1, 1, 0)
+                love.graphics.setColor(sc[1], sc[2], sc[3])
                 love.graphics.print(tostring(cd), (WINDOW_WIDTH - scoreFont:getWidth(tostring(cd))) / 2, WINDOW_HEIGHT / 2 + 10)
             end
         end
@@ -458,7 +461,7 @@ function game.draw()
 
     if state == "gameover" then
         love.graphics.setFont(messageFont)
-        love.graphics.setColor(1, 1, 0)
+        love.graphics.setColor(sc[1], sc[2], sc[3])
         local winner = "Player 1 Wins!"
         if paddle2.score > paddle1.score then
             if mode == "singleplayer" then
@@ -478,14 +481,14 @@ function game.draw()
         love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
         love.graphics.setFont(messageFont)
-        love.graphics.setColor(1, 1, 0)
+        love.graphics.setColor(sc[1], sc[2], sc[3])
         local msg = "PAUSED"
         love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 80)
 
         for i, item in ipairs(pauseItems) do
             local y = WINDOW_HEIGHT / 2 - 20 + (i - 1) * 50
             if i == pauseSelection then
-                love.graphics.setColor(1, 1, 0)
+                love.graphics.setColor(sc[1], sc[2], sc[3])
                 love.graphics.print("> " .. item, (WINDOW_WIDTH - messageFont:getWidth("> " .. item)) / 2, y)
             else
                 love.graphics.setColor(1, 1, 1)

@@ -1,14 +1,26 @@
+local colors = require("colors")
+
 local settings = {}
 
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
 
+local colorKeys = {"menuColor", "paddle1Color", "paddle2Color", "ballColor", "scoreColor"}
+local colorItemLabel = {menuColor = "Menu Text", paddle1Color = "Paddle 1", paddle2Color = "Paddle 2", ballColor = "Ball", scoreColor = "Scoreboard"}
+
 local items = {
-    { label = "Paddle Speed",        type = "slider",  value = 1.0, min = 0.5, max = 2.0, step = 0.1,        key = "paddleSpeed" },
-    { label = "Ball Speed",          type = "slider",  value = 1.0, min = 0.5, max = 2.0, step = 0.1,        key = "ballSpeed" },
+    { label = "P1 Sensitivity",      type = "slider",  value = 1.0, min = 0.5, max = 2.0, step = 0.1,        key = "p1Sensitivity" },
+    { label = "P2 Sensitivity",      type = "slider",  value = 1.0, min = 0.5, max = 2.0, step = 0.1,        key = "p2Sensitivity" },
+    { label = "Ball Speed",          type = "slider",  value = 1.0, min = 0.5, max = 5.0, step = 0.1,        key = "ballSpeed" },
     { label = "Winning Score",       type = "cycle",   value = 7,   options = {3, 5, 7, 11, 21, 0},           key = "winningScore" },
     { label = "Fullscreen",          type = "toggle",  value = false,                                           key = "fullscreen" },
     { label = "Split Controller",    type = "toggle",  value = false,                                           key = "splitController" },
+    { label = "Menu Text Color",     type = "color",   value = "white", options = colors.names(),               key = "menuColor" },
+    { label = "Selected Color",      type = "color",   value = "yellow", options = colors.names(),              key = "selectedColor" },
+    { label = "Paddle 1 Color",      type = "color",   value = "white", options = colors.names(),               key = "paddle1Color" },
+    { label = "Paddle 2 Color",      type = "color",   value = "white", options = colors.names(),               key = "paddle2Color" },
+    { label = "Ball Color",          type = "color",   value = "white", options = colors.names(),               key = "ballColor" },
+    { label = "Scoreboard Color",    type = "color",   value = "white", options = colors.names(),               key = "scoreColor" },
     { label = "Back",                type = "action",  action = "back" },
 }
 
@@ -64,20 +76,23 @@ function settings.update(dt)
 end
 
 function settings.draw()
-    local font = love.graphics.newFont(48)
-    love.graphics.setFont(font)
-    love.graphics.setColor(1, 1, 1)
-    local title = "Settings"
-    love.graphics.print(title, (WINDOW_WIDTH - font:getWidth(title)) / 2, 50)
+    local titleFont = love.graphics.newFont("font.ttf", 40)
+    local itemFont = love.graphics.newFont("font.ttf", 22)
 
-    local itemFont = love.graphics.newFont(28)
+    love.graphics.setFont(titleFont)
+    local mc = colors.get(_G.settingsData.menuColor or "white")
+    love.graphics.setColor(mc[1], mc[2], mc[3])
+    local title = "Settings"
+    love.graphics.print(title, (WINDOW_WIDTH - titleFont:getWidth(title)) / 2, 40)
+
     love.graphics.setFont(itemFont)
+    local sc = colors.get(_G.settingsData.selectedColor or "yellow")
 
     for i, item in ipairs(items) do
-        local y = 180 + (i - 1) * 55
+        local y = 115 + (i - 1) * 45
 
         if i == selectedIndex then
-            love.graphics.setColor(1, 1, 0)
+            love.graphics.setColor(sc[1], sc[2], sc[3])
         else
             love.graphics.setColor(1, 1, 1)
         end
@@ -87,26 +102,45 @@ function settings.draw()
             local valStr = tostring(item.value)
             if item.value == 0 then valStr = "∞" end
             display = item.label .. ": " .. valStr
+        elseif item.type == "color" then
+            local c = colors.get(item.value)
+            display = item.label .. ": " .. item.value:sub(1, 1):upper() .. item.value:sub(2)
+            if i == selectedIndex then
+                love.graphics.setColor(sc[1], sc[2], sc[3])
+            else
+                love.graphics.setColor(c[1], c[2], c[3])
+            end
         elseif item.type == "slider" then
-            display = item.label .. ": " .. item.value
+            local valDisplay = tostring(item.value)
+            if item.value >= item.max then
+                valDisplay = valDisplay .. "  Are you crazy?!"
+            end
+            display = item.label .. ": " .. valDisplay
         elseif item.type == "toggle" then
             display = item.label .. ": " .. (item.value and "ON" or "OFF")
         end
 
         if i == selectedIndex then
-            love.graphics.print("> " .. display, 200, y)
+            love.graphics.setColor(sc[1], sc[2], sc[3])
+            love.graphics.print("> " .. display, 160, y)
         else
-            love.graphics.print(display, 200, y)
+            if item.type == "color" then
+                local c = colors.get(item.value)
+                love.graphics.setColor(c[1], c[2], c[3])
+            else
+                love.graphics.setColor(1, 1, 1)
+            end
+            love.graphics.print(display, 160, y)
         end
 
         if item.type == "slider" and i == selectedIndex then
-            local barX = 600
-            local barY = y + 6
-            local barW = 400
+            local barX = 620
+            local barY = y + 5
+            local barW = 350
             local barH = 10
             love.graphics.setColor(0.3, 0.3, 0.3)
             love.graphics.rectangle("fill", barX, barY, barW, barH)
-            love.graphics.setColor(1, 1, 0)
+            love.graphics.setColor(1, 1, 1)
             local fill = (item.value - item.min) / (item.max - item.min)
             love.graphics.rectangle("fill", barX, barY, barW * fill, barH)
         end
@@ -128,7 +162,7 @@ function settings.keypressed(key)
             end
         elseif item.type == "toggle" then
             item.value = not item.value
-        elseif item.type == "cycle" then
+        elseif item.type == "cycle" or item.type == "color" then
             cycleItem(item, 1)
         end
     elseif key == "escape" then
@@ -153,7 +187,7 @@ function settings.gamepadpressed(joystick, button)
             end
         elseif item.type == "toggle" then
             item.value = not item.value
-        elseif item.type == "cycle" then
+        elseif item.type == "cycle" or item.type == "color" then
             cycleItem(item, 1)
         end
     elseif button == "b" then
@@ -164,8 +198,8 @@ end
 function settings.mousepressed(x, y, button)
     if button == 1 then
         for i, item in ipairs(items) do
-            local itemY = 180 + (i - 1) * 55
-            if y >= itemY and y <= itemY + 40 then
+            local itemY = 115 + (i - 1) * 45
+            if y >= itemY and y <= itemY + 35 then
                 selectedIndex = i
                 if item.type == "action" then
                     if item.action == "back" then
@@ -173,7 +207,7 @@ function settings.mousepressed(x, y, button)
                     end
                 elseif item.type == "toggle" then
                     item.value = not item.value
-                elseif item.type == "cycle" then
+                elseif item.type == "cycle" or item.type == "color" then
                     cycleItem(item, 1)
                 end
                 return
@@ -190,7 +224,7 @@ function adjustSetting(dir)
         elseif dir == "right" then
             item.value = math.min(item.max, item.value + item.step)
         end
-    elseif item.type == "cycle" then
+    elseif item.type == "cycle" or item.type == "color" then
         if dir == "left" then
             cycleItem(item, -1)
         elseif dir == "right" then
