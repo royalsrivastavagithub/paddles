@@ -53,6 +53,8 @@ local function buildItems()
         { label = "Winning Score",    type = "cycle",  value = 7,   options = {3, 5, 7, 11, 21, 0}, key = "winningScore" },
         { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen"}, key = "displayMode" },
         { label = "Resolution",       type = "cycle",  value = "Display Native", options = {"Display Native", "720p (1280x720)", "1080p (1920x1080)", "1440p (2560x1440)", "4K (3840x2160)"}, key = "resolution" },
+        { label = "VSync",            type = "toggle", value = true,  key = "vSync" },
+        { label = "Max FPS",          type = "cycle",  value = 0,     options = {0, 30, 60, 120, 144}, key = "maxFPS" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
         { label = "--- Game ---",     type = "header" },
         { label = "Clear History",    type = "action", action = "clearHistory" },
@@ -80,6 +82,10 @@ local function applyItem(item)
             applyDisplayModeRes()
         elseif item.key == "splitController" then
             input.setSplitMode(item.value)
+        elseif item.key == "vSync" then
+            love.window.setVSync(item.value)
+        elseif item.key == "maxFPS" then
+            love.timer.setFPS(item.value)
         end
     end
 end
@@ -169,7 +175,8 @@ function settings.draw()
                 local display = item.label
                 if item.type == "cycle" then
                     local valStr = tostring(item.value)
-                    if item.value == 0 then valStr = "∞" end
+                    if item.key == "winningScore" and item.value == 0 then valStr = "∞" end
+                    if item.key == "maxFPS" and item.value == 0 then valStr = "Unlimited" end
                     display = item.label .. ": " .. valStr
                 elseif item.type == "slider" then
                     local valDisplay = string.format("%.2f", item.value)
@@ -316,6 +323,8 @@ function resetAllSettings()
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
+        vSync = true,
+        maxFPS = 0,
         bgColor = {r=0.05, g=0.05, b=0.05},
         menuColor = {r=1, g=1, b=1},
         selectedColor = {r=1, g=1, b=0},
@@ -325,6 +334,8 @@ function resetAllSettings()
         scoreColor = {r=1, g=1, b=1},
     }
     applyDisplayModeRes()
+    love.window.setVSync(true)
+    love.timer.setFPS(0)
     input.setSplitMode(false)
     saveSettings()
     settings.enter()

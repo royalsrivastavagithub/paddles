@@ -25,6 +25,8 @@ function love.load()
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
+        vSync = true,
+        maxFPS = 0,
         bgColor = {r=0.05, g=0.05, b=0.05},
         menuColor = {r=1, g=1, b=1},
         selectedColor = {r=1, g=1, b=0},
@@ -37,6 +39,8 @@ function love.load()
     settingsData.bgColor.r = math.min(0.5, settingsData.bgColor.r)
     settingsData.bgColor.g = math.min(0.5, settingsData.bgColor.g)
     settingsData.bgColor.b = math.min(0.5, settingsData.bgColor.b)
+    love.window.setVSync(settingsData.vSync)
+    love.timer.setFPS(settingsData.maxFPS)
     settings.applyDisplayModeRes()
 
     input.load()
