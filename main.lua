@@ -6,7 +6,7 @@ local input = require("input")
 local state = nil
 local gameMode = nil
 local difficulty = nil
-local settingsData = {}
+settingsData = {}
 
 function love.load()
     love.window.setTitle("PONG")
@@ -113,5 +113,10 @@ function startSettings()
 end
 
 function backToMenu()
+    if settingsData.fullscreen then
+        love.window.setFullscreen(true)
+    else
+        love.window.setFullscreen(false)
+    end
     switchState("menu")
 end
