@@ -14,6 +14,7 @@ local difficultyItems = {
     { label = "Easy",   action = "easy" },
     { label = "Medium", action = "medium" },
     { label = "Hard",   action = "hard" },
+    { label = "God",    action = "god" },
     { label = "Back",   action = "back" },
 }
 

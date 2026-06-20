@@ -19,8 +19,12 @@ function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy)
     if not coming then
         reactionTimer = 0
         fixedTargetY = nil
-        local mult = difficulty == "hard" and 0.5 or 0.45
-        moveTowardCenter(paddle, arenaH, mult)
+        if difficulty == "god" then
+            paddle.dy = 0
+        else
+            local mult = difficulty == "hard" and 0.5 or 0.45
+            moveTowardCenter(paddle, arenaH, mult)
+        end
         return
     end
 
@@ -66,7 +70,7 @@ function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy)
         else
             paddle.dy = 0
         end
-    else
+    elseif difficulty == "hard" then
         if reactionTimer == 0 then
             if math.abs(playerDy) > 30 then
                 targetOffset = playerDy < 0 and 0.6 or -0.6
@@ -94,6 +98,20 @@ function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy)
                 paddle.dy = 0
             end
         end
+    else
+        local predictedY = predictBallArrival(ball, paddle.x, arenaH)
+        if predictedY then
+            local dir = 1
+            if math.abs(playerDy) > 30 then
+                dir = playerDy < 0 and 1 or -1
+            else
+                dir = math.random() > 0.5 and 1 or -1
+            end
+            local aimOffset = dir
+            local paddleCenter = predictedY - aimOffset * (paddle.height / 2)
+            paddle.y = paddleCenter - paddle.height / 2
+        end
+        paddle.dy = 0
     end
 end
 

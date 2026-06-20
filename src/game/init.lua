@@ -29,6 +29,8 @@ local WINNING_SCORE = 7
 
 local scoreFont = nil
 local messageFont = nil
+local godLosePhase = nil
+local godLoseTimer = 0
 
 function game.enter(m, d, sd)
     mode = m
@@ -52,6 +54,8 @@ function game.enter(m, d, sd)
     pauseSelection = 1
     pauseStickTimer = 0
     speedTimer = 0
+    godLosePhase = nil
+    godLoseTimer = 0
     ai.reset()
 
     scoreFont = love.graphics.newFont("assets/fonts/font.ttf", 48)
@@ -99,7 +103,23 @@ function game.update(dt)
         return
     end
 
-    if state == "gameover" then return end
+    if state == "gameover" then
+        if godLosePhase then
+            godLoseTimer = godLoseTimer - dt
+            if godLoseTimer <= 0 then
+                if godLosePhase == 1 then
+                    godLosePhase = 2
+                    godLoseTimer = 1.5
+                elseif godLosePhase == 2 then
+                    godLosePhase = 3
+                    godLoseTimer = 1.5
+                else
+                    love.event.quit()
+                end
+            end
+        end
+        return
+    end
 
     speedTimer = speedTimer + dt
     if speedTimer >= entities.SPEED_INCREASE_INTERVAL then
@@ -149,6 +169,11 @@ function updateBall(dt)
     end
 end
 
+function startGodLose()
+    godLosePhase = 1
+    godLoseTimer = 1.5
+end
+
 function startCountdown()
     servePhase = "countdown"
     serveTimer = 3.0
@@ -196,12 +221,18 @@ function game.draw()
     love.graphics.setColor(bg.r, bg.g, bg.b)
     love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-    love.graphics.setColor(sc.r, sc.g, sc.b)
     love.graphics.setFont(scoreFont)
-    local p1Text = tostring(paddle1.score)
-    local p2Text = tostring(paddle2.score)
-    love.graphics.print(p1Text, WINDOW_WIDTH / 2 - 100 - scoreFont:getWidth(p1Text) / 2, 30)
-    love.graphics.print(p2Text, WINDOW_WIDTH / 2 + 100 - scoreFont:getWidth(p2Text) / 2, 30)
+    if difficulty == "god" then
+        love.graphics.setColor(sc.r, sc.g, sc.b)
+        local p2Text = "EZ: " .. paddle2.score
+        love.graphics.print(p2Text, WINDOW_WIDTH / 2 + 100 - scoreFont:getWidth(p2Text) / 2, 30)
+    else
+        love.graphics.setColor(sc.r, sc.g, sc.b)
+        local p1Text = tostring(paddle1.score)
+        local p2Text = tostring(paddle2.score)
+        love.graphics.print(p1Text, WINDOW_WIDTH / 2 - 100 - scoreFont:getWidth(p1Text) / 2, 30)
+        love.graphics.print(p2Text, WINDOW_WIDTH / 2 + 100 - scoreFont:getWidth(p2Text) / 2, 30)
+    end
 
     love.graphics.setColor(0.4, 0.4, 0.4)
     for i = 0, WINDOW_HEIGHT, 25 do
@@ -243,14 +274,26 @@ function game.draw()
     if state == "gameover" then
         love.graphics.setFont(messageFont)
         love.graphics.setColor(sel.r, sel.g, sel.b)
-        local winner = "Player 1 Wins!"
-        if paddle2.score > paddle1.score then
-            winner = mode == "singleplayer" and "AI Wins!" or "Player 2 Wins!"
+        if difficulty == "god" and godLosePhase then
+            local msgs = {"WTF", "no way", "i am out"}
+            local msg = msgs[godLosePhase]
+            love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 50)
+        elseif difficulty == "god" then
+            local msg = "AI Wins!"
+            love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 50)
+            local sub = "Press Enter or A to continue"
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.print(sub, (WINDOW_WIDTH - messageFont:getWidth(sub)) / 2, WINDOW_HEIGHT / 2 + 20)
+        else
+            local winner = "Player 1 Wins!"
+            if paddle2.score > paddle1.score then
+                winner = mode == "singleplayer" and "AI Wins!" or "Player 2 Wins!"
+            end
+            love.graphics.print(winner, (WINDOW_WIDTH - messageFont:getWidth(winner)) / 2, WINDOW_HEIGHT / 2 - 50)
+            local msg = "Press Enter or A to continue"
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 + 20)
         end
-        love.graphics.print(winner, (WINDOW_WIDTH - messageFont:getWidth(winner)) / 2, WINDOW_HEIGHT / 2 - 50)
-        local msg = "Press Enter or A to continue"
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 + 20)
     end
 
     if paused then
@@ -293,13 +336,21 @@ function game.keypressed(key)
         return
     end
 
-    if key == "escape" then
-        if state == "gameover" then backToMenu()
-        elseif state ~= "serve" then paused = true; pauseSelection = 1; love.mouse.setVisible(true) end
+    if state == "gameover" then
+        if key == "escape" or key == "return" or key == " " then
+            if difficulty == "god" and paddle1.score > paddle2.score then
+                startGodLose()
+            else
+                backToMenu()
+            end
+        end
         return
     end
 
-    if state == "gameover" and (key == "return" or key == " ") then backToMenu() end
+    if key == "escape" then
+        if state ~= "serve" then paused = true; pauseSelection = 1; love.mouse.setVisible(true) end
+        return
+    end
 end
 
 function game.gamepadpressed(joystick, button)
@@ -328,13 +379,21 @@ function game.gamepadpressed(joystick, button)
         return
     end
 
-    if button == "start" then
-        if state == "gameover" then backToMenu()
-        elseif state ~= "serve" then paused = true; pauseSelection = 1; love.mouse.setVisible(true) end
+    if state == "gameover" then
+        if button == "start" or button == "a" then
+            if difficulty == "god" and paddle1.score > paddle2.score then
+                startGodLose()
+            else
+                backToMenu()
+            end
+        end
         return
     end
 
-    if state == "gameover" and button == "a" then backToMenu() end
+    if button == "start" and state ~= "serve" then
+        paused = true; pauseSelection = 1; love.mouse.setVisible(true)
+        return
+    end
 end
 
 return game
