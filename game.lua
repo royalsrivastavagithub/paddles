@@ -261,6 +261,9 @@ end
 function game.draw()
     love.graphics.setBackgroundColor(0, 0, 0)
 
+    love.graphics.setColor(0.2, 0.2, 0.2)
+    love.graphics.rectangle("line", 2, 2, WINDOW_WIDTH - 4, WINDOW_HEIGHT - 4)
+
     love.graphics.setColor(1, 1, 1)
     love.graphics.setFont(scoreFont)
     local p1Text = tostring(paddle1.score)
@@ -268,21 +271,34 @@ function game.draw()
     love.graphics.print(p1Text, WINDOW_WIDTH / 2 - 100 - scoreFont:getWidth(p1Text) / 2, 30)
     love.graphics.print(p2Text, WINDOW_WIDTH / 2 + 100 - scoreFont:getWidth(p2Text) / 2, 30)
 
-    love.graphics.setColor(0.5, 0.5, 0.5)
-    for i = 0, WINDOW_HEIGHT, 20 do
-        love.graphics.rectangle("fill", WINDOW_WIDTH / 2 - 2, i, 4, 10)
+    love.graphics.setColor(0.4, 0.4, 0.4)
+    for i = 0, WINDOW_HEIGHT, 25 do
+        love.graphics.rectangle("fill", WINDOW_WIDTH / 2 - 2, i, 4, 12)
     end
 
     love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle("fill", paddle1.x, paddle1.y, paddle1.width, paddle1.height)
     love.graphics.rectangle("fill", paddle2.x, paddle2.y, paddle2.width, paddle2.height)
+
+    local ballFlash = math.floor(serveTimer * 10) % 2 == 0
+    if state == "serve" and ballFlash then
+        love.graphics.setColor(0.5, 0.5, 0.5)
+    else
+        love.graphics.setColor(1, 1, 1)
+    end
     love.graphics.rectangle("fill", ball.x, ball.y, ball.width, ball.height)
 
     if state == "serve" then
+        local cd = math.ceil(serveTimer)
+        if cd > 0 then
+            love.graphics.setFont(scoreFont)
+            love.graphics.setColor(1, 1, 0)
+            love.graphics.print(tostring(cd), (WINDOW_WIDTH - scoreFont:getWidth(tostring(cd))) / 2, WINDOW_HEIGHT / 2 + 10)
+        end
         love.graphics.setFont(messageFont)
-        love.graphics.setColor(1, 1, 1)
-        local msg = "Press any key or button to serve..."
-        love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 + 50)
+        love.graphics.setColor(0.5, 0.5, 0.5)
+        local msg = "Press any key to skip"
+        love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 + 60)
     end
 
     if state == "gameover" then
