@@ -1,5 +1,3 @@
-local colors = require("colors")
-
 local menu = {}
 
 local WINDOW_WIDTH = 1280
@@ -64,12 +62,12 @@ function menu.update(dt)
 end
 
 function menu.draw()
-    local mc = colors.get(_G.settingsData.menuColor or "white")
-    local sc = colors.get(_G.settingsData.selectedColor or "yellow")
+    local mc = _G.settingsData.menuColor or {r=1, g=1, b=1}
+    local sc = _G.settingsData.selectedColor or {r=1, g=1, b=0}
 
     local font = love.graphics.newFont("font.ttf", 64)
     love.graphics.setFont(font)
-    love.graphics.setColor(mc[1], mc[2], mc[3])
+    love.graphics.setColor(mc.r, mc.g, mc.b)
     local titleW = font:getWidth("PONG")
     love.graphics.print("PONG", (WINDOW_WIDTH - titleW) / 2, 100)
 
@@ -86,10 +84,10 @@ function drawMenuItems(list, selectedIdx, startY, menuColor, selectedColor)
 
     for i, item in ipairs(list) do
         if i == selectedIdx then
-            love.graphics.setColor(selectedColor[1], selectedColor[2], selectedColor[3])
+            love.graphics.setColor(selectedColor.r, selectedColor.g, selectedColor.b)
             love.graphics.print("> " .. item.label, (WINDOW_WIDTH - font:getWidth("> " .. item.label)) / 2, startY + (i - 1) * 60)
         else
-            love.graphics.setColor(menuColor[1], menuColor[2], menuColor[3])
+            love.graphics.setColor(menuColor.r, menuColor.g, menuColor.b)
             love.graphics.print(item.label, (WINDOW_WIDTH - font:getWidth(item.label)) / 2, startY + (i - 1) * 60)
         end
     end
