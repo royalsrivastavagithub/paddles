@@ -85,7 +85,7 @@ local function applyItem(item)
         elseif item.key == "vSync" then
             love.window.setVSync(item.value)
         elseif item.key == "maxFPS" then
-            love.timer.setFPS(item.value)
+            -- applied in love.draw via frame limiter
         end
     end
 end
@@ -335,7 +335,6 @@ function resetAllSettings()
     }
     applyDisplayModeRes()
     love.window.setVSync(true)
-    love.timer.setFPS(0)
     input.setSplitMode(false)
     saveSettings()
     settings.enter()

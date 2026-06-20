@@ -9,6 +9,7 @@ local VIRTUAL_HEIGHT = 720
 local state = nil
 local gameMode = nil
 local difficulty = nil
+local frameTimer = 0
 settingsData = {}
 
 function love.load()
@@ -40,7 +41,6 @@ function love.load()
     settingsData.bgColor.g = math.min(0.5, settingsData.bgColor.g)
     settingsData.bgColor.b = math.min(0.5, settingsData.bgColor.b)
     love.window.setVSync(settingsData.vSync)
-    love.timer.setFPS(settingsData.maxFPS)
     settings.applyDisplayModeRes()
 
     input.load()
@@ -59,6 +59,16 @@ function love.update(dt)
 end
 
 function love.draw()
+    if settingsData.maxFPS and settingsData.maxFPS > 0 then
+        local limit = 1 / settingsData.maxFPS
+        local now = love.timer.getTime()
+        local elapsed = now - frameTimer
+        if elapsed < limit then
+            love.timer.sleep(limit - elapsed)
+        end
+        frameTimer = love.timer.getTime()
+    end
+
     local screenW, screenH = love.graphics.getDimensions()
     local scale = math.min(screenW / VIRTUAL_WIDTH, screenH / VIRTUAL_HEIGHT)
     local offsetX = (screenW - VIRTUAL_WIDTH * scale) / 2
