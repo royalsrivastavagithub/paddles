@@ -194,16 +194,15 @@ function checkWin()
 end
 
 function game.draw()
-    love.graphics.setBackgroundColor(0, 0, 0)
-
     local sel = settingsData.selectedColor or {r=1, g=1, b=0}
     local p1c = settingsData.paddle1Color or {r=1, g=1, b=1}
     local p2c = settingsData.paddle2Color or {r=1, g=1, b=1}
     local bc = settingsData.ballColor or {r=1, g=1, b=1}
     local sc = settingsData.scoreColor or {r=1, g=1, b=1}
 
-    love.graphics.setColor(0.2, 0.2, 0.2)
-    love.graphics.rectangle("line", 2, 2, WINDOW_WIDTH - 4, WINDOW_HEIGHT - 4)
+    local bg = settingsData.bgColor or {r=0, g=0, b=0}
+    love.graphics.setColor(bg.r, bg.g, bg.b)
+    love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
     love.graphics.setColor(sc.r, sc.g, sc.b)
     love.graphics.setFont(scoreFont)
