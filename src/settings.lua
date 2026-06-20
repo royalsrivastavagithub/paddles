@@ -54,7 +54,7 @@ local function buildItems()
         { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen"}, key = "displayMode" },
         { label = "Resolution",       type = "cycle",  value = "Display Native", options = {"Display Native", "720p (1280x720)", "1080p (1920x1080)", "1440p (2560x1440)", "4K (3840x2160)"}, key = "resolution" },
         { label = "VSync",            type = "toggle", value = true,  key = "vSync" },
-        { label = "Max FPS",          type = "cycle",  value = 0,     options = {0, 30, 60, 120, 144}, key = "maxFPS" },
+        { label = "Max FPS",          type = "cycle",  value = 0,     options = {0, 30, 60, 120, 144, 165, 240, 360, 480, 1024}, key = "maxFPS" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
         { label = "--- Game ---",     type = "header" },
         { label = "Clear History",    type = "action", action = "clearHistory" },
