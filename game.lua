@@ -14,6 +14,8 @@ local BALL_SIZE = 15
 local BALL_SPEED = 350
 local BALL_SPEED_INCREASE = 1.02
 local MAX_BALL_SPEED = 800
+local SPEED_INCREASE_INTERVAL = 5
+local SPEED_INCREASE_AMOUNT = 15
 
 local WINNING_SCORE = 7
 
@@ -32,6 +34,9 @@ local serveDelay = 1.0
 local paused = false
 local pauseSelection = 1
 local pauseItems = {"Resume", "Quit to Menu"}
+local speedTimer = 0
+local aiReactionTimer = 0
+local aiTargetOffset = 0
 
 local scoreFont = nil
 local messageFont = nil
@@ -45,19 +50,16 @@ function game.enter(m, d, sd)
     local ps = settingsData.paddleSpeed or 1.0
 
     paddle1 = newPaddle(PADDLE_OFFSET, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, ps)
-    if mode == "singleplayer" then
-        local aiSpeed = ps
-        if difficulty == "easy" then aiSpeed = aiSpeed * 0.5 end
-        paddle2 = newPaddle(WINDOW_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, aiSpeed)
-    else
-        paddle2 = newPaddle(WINDOW_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, ps)
-    end
+    paddle2 = newPaddle(WINDOW_WIDTH - PADDLE_OFFSET - PADDLE_WIDTH, WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2, ps)
 
     ball = newBall()
     state = "serve"
     serveTimer = serveDelay
     paused = false
     pauseSelection = 1
+    speedTimer = 0
+    aiReactionTimer = 0
+    aiTargetOffset = (math.random() * 2 - 1) * 0.4
 
     scoreFont = love.graphics.newFont(48)
     messageFont = love.graphics.newFont(36)
@@ -103,6 +105,12 @@ function game.update(dt)
 
     if state == "gameover" then return end
 
+    speedTimer = speedTimer + dt
+    if speedTimer >= SPEED_INCREASE_INTERVAL then
+        speedTimer = 0
+        ball.speed = math.min(ball.speed + SPEED_INCREASE_AMOUNT, MAX_BALL_SPEED)
+    end
+
     updatePaddle1(dt)
     updatePaddle2(dt)
     updateBall(dt)
@@ -139,38 +147,112 @@ function updatePaddle2(dt)
 end
 
 function updateAI(dt)
-    local reactionDelay, accuracy, speedMult
+    local ballComingTowardAI = ball.dx > 0
 
-    if difficulty == "easy" then
-        reactionDelay = 0.3
-        accuracy = 0.65
-        speedMult = 0.5
-    elseif difficulty == "hard" then
-        reactionDelay = 0.05
-        accuracy = 0.95
-        speedMult = 0.95
-    else
-        reactionDelay = 0.15
-        accuracy = 0.8
-        speedMult = 0.75
+    if not ballComingTowardAI then
+        aiReactionTimer = 0
+        if difficulty == "easy" then
+            moveTowardCenter(dt, 0.3)
+        else
+            moveTowardCenter(dt, 0.5)
+        end
+        return
     end
 
-    local paddleCenter = paddle2.y + paddle2.height / 2
-    local ballCenter = ball.y + ball.height / 2
-    local diff = ballCenter - paddleCenter
-
-    if math.abs(diff) > paddle2.height * (1 - accuracy) then
-        local target = paddle2.y + diff * accuracy
-        local moveSpeed = paddle2.speed * speedMult
-        if target < paddle2.y then
-            paddle2.dy = -moveSpeed
-        elseif target > paddle2.y then
-            paddle2.dy = moveSpeed
+    if difficulty == "easy" then
+        aiReactionTimer = aiReactionTimer + dt
+        local reactionTime = 0.4
+        if aiReactionTimer < reactionTime then
+            paddle2.dy = 0
+            return
+        end
+        local ballY = ball.y + ball.height / 2
+        local targetY = ballY + (math.random() - 0.5) * paddle2.height * 0.8
+        local diff = targetY - (paddle2.y + paddle2.height / 2)
+        local moveSpeed = paddle2.speed * 0.4
+        if math.abs(diff) > paddle2.height * 0.3 then
+            paddle2.dy = (diff > 0 and 1 or -1) * moveSpeed
         else
             paddle2.dy = 0
         end
+    elseif difficulty == "medium" then
+        if aiReactionTimer == 0 then
+            aiTargetOffset = (math.random() * 2 - 1) * 0.45
+        end
+        aiReactionTimer = 1
+        local predictedY = predictBallArrival()
+        if predictedY then
+            local offset = aiTargetOffset
+            local targetPaddleY = predictedY - (paddle2.height / 2) * (offset + 1)
+            local diff = targetPaddleY - paddle2.y
+            local moveSpeed = paddle2.speed * 0.7
+            if math.abs(diff) > 8 then
+                paddle2.dy = clamp(diff / 40, -1, 1) * moveSpeed
+            else
+                paddle2.dy = 0
+            end
+        end
+    else
+        if aiReactionTimer == 0 then
+            aiTargetOffset = (math.random() > 0.5 and 0.7 or -0.7)
+        end
+        aiReactionTimer = 1
+        local predictedY = predictBallArrival()
+        if predictedY then
+            local offset = calculateAimOffset()
+            local targetPaddleY = predictedY - (paddle2.height / 2) * (offset + 1)
+            local diff = targetPaddleY - paddle2.y
+            local moveSpeed = paddle2.speed * 0.95
+            if math.abs(diff) > 4 then
+                paddle2.dy = clamp(diff / 25, -1, 1) * moveSpeed
+            else
+                paddle2.dy = 0
+            end
+        end
+    end
+end
+
+function moveTowardCenter(dt, speedMult)
+    local center = WINDOW_HEIGHT / 2 - paddle2.height / 2
+    local diff = center - paddle2.y
+    if math.abs(diff) > 20 then
+        paddle2.dy = (diff > 0 and 1 or -1) * paddle2.speed * speedMult
     else
         paddle2.dy = 0
+    end
+end
+
+function predictBallArrival()
+    if ball.dx <= 0 then return nil end
+    local time = (paddle2.x - ball.x) / ball.dx
+    if time <= 0 then return nil end
+    local y = ball.y + ball.height / 2 + ball.dy * time
+    local arenaH = WINDOW_HEIGHT
+    if y < 0 then y = -y end
+    if y > arenaH then
+        local bounces = math.floor(y / arenaH)
+        if bounces % 2 == 0 then
+            y = y % arenaH
+        else
+            y = arenaH - (y % arenaH)
+        end
+    end
+    return y
+end
+
+function calculateAimOffset()
+    local playerVel = paddle1.dy
+    if math.abs(playerVel) > 30 then
+        if playerVel < 0 then
+            return 0.6
+        else
+            return -0.6
+        end
+    else
+        if math.random() < 0.3 then
+            aiTargetOffset = (math.random() > 0.5 and 0.8 or -0.8) * (0.7 + math.random() * 0.3)
+        end
+        return aiTargetOffset
     end
 end
 
@@ -259,6 +341,13 @@ end
 
 function game.draw()
     love.graphics.setBackgroundColor(0, 0, 0)
+
+    if mode == "singleplayer" then
+        local label = "AI: " .. difficulty:sub(1, 1):upper() .. difficulty:sub(2)
+        love.graphics.setColor(0.4, 0.4, 0.4)
+        love.graphics.setFont(messageFont)
+        love.graphics.print(label, 20, 20)
+    end
 
     love.graphics.setColor(0.2, 0.2, 0.2)
     love.graphics.rectangle("line", 2, 2, WINDOW_WIDTH - 4, WINDOW_HEIGHT - 4)
