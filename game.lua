@@ -30,6 +30,8 @@ local state = nil
 local serveTimer = 0
 local serveDelay = 1.0
 local paused = false
+local pauseSelection = 1
+local pauseItems = {"Resume", "Quit to Menu"}
 
 local scoreFont = nil
 local messageFont = nil
@@ -55,6 +57,7 @@ function game.enter(m, d, sd)
     state = "serve"
     serveTimer = serveDelay
     paused = false
+    pauseSelection = 1
 
     scoreFont = love.graphics.newFont(48)
     messageFont = love.graphics.newFont(36)
@@ -300,20 +303,53 @@ function game.draw()
     end
 
     if paused then
+        love.graphics.setColor(0, 0, 0, 180)
+        love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+
         love.graphics.setFont(messageFont)
         love.graphics.setColor(1, 1, 0)
         local msg = "PAUSED"
-        love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 20)
+        love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 80)
+
+        for i, item in ipairs(pauseItems) do
+            local y = WINDOW_HEIGHT / 2 - 20 + (i - 1) * 50
+            if i == pauseSelection then
+                love.graphics.setColor(1, 1, 0)
+                love.graphics.print("> " .. item, (WINDOW_WIDTH - messageFont:getWidth("> " .. item)) / 2, y)
+            else
+                love.graphics.setColor(1, 1, 1)
+                love.graphics.print(item, (WINDOW_WIDTH - messageFont:getWidth(item)) / 2, y)
+            end
+        end
     end
 end
 
 function game.keypressed(key)
+    if paused then
+        if key == "up" then
+            pauseSelection = math.max(1, pauseSelection - 1)
+        elseif key == "down" then
+            pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+        elseif key == "return" or key == " " then
+            if pauseSelection == 1 then
+                paused = false
+            else
+                backToMenu()
+            end
+        elseif key == "escape" then
+            paused = false
+        end
+        return
+    end
+
     if key == "escape" then
         if state == "gameover" then
             backToMenu()
         else
-            paused = not paused
+            paused = true
+            pauseSelection = 1
         end
+        return
     end
 
     if state == "serve" then
@@ -326,12 +362,31 @@ function game.keypressed(key)
 end
 
 function game.gamepadpressed(joystick, button)
+    if paused then
+        if button == "dpup" or button == "leftstickup" then
+            pauseSelection = math.max(1, pauseSelection - 1)
+        elseif button == "dpdown" or button == "leftstickdown" then
+            pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+        elseif button == "a" then
+            if pauseSelection == 1 then
+                paused = false
+            else
+                backToMenu()
+            end
+        elseif button == "b" or button == "start" then
+            paused = false
+        end
+        return
+    end
+
     if button == "start" then
         if state == "gameover" then
             backToMenu()
         else
-            paused = not paused
+            paused = true
+            pauseSelection = 1
         end
+        return
     end
 
     if state == "serve" then
