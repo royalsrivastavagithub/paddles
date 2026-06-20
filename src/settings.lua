@@ -1,4 +1,5 @@
 local settings = {}
+local input = require("src.input")
 
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
@@ -40,6 +41,22 @@ local function buildItems()
     table.insert(items, { label = "Back", type = "action", action = "back" })
 end
 buildItems()
+
+local function applyItem(item)
+    if not item.key then return end
+    if item.channel then
+        if not _G.settingsData[item.key] then _G.settingsData[item.key] = {r=0, g=0, b=0} end
+        _G.settingsData[item.key][item.channel] = item.value
+    else
+        _G.settingsData[item.key] = item.value
+        if item.key == "fullscreen" then
+            if item.value then love.window.setFullscreen(true, "desktop")
+            else love.window.setFullscreen(false); love.window.setMode(1280, 720) end
+        elseif item.key == "splitController" then
+            input.setSplitMode(item.value)
+        end
+    end
+end
 
 function scrollToSelected()
     if selectedIndex < scrollOffset + 2 then
@@ -169,8 +186,8 @@ function settings.keypressed(key)
     elseif key == "return" or key == " " then
         local item = items[selectedIndex]
         if item.type == "action" and item.action == "back" then backToMenu()
-        elseif item.type == "toggle" then item.value = not item.value
-        elseif item.type == "cycle" then cycleItem(item, 1) end
+        elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
+        elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
     elseif key == "escape" then backToMenu() end
 end
 
@@ -182,8 +199,8 @@ function settings.gamepadpressed(joystick, button)
     elseif button == "a" then
         local item = items[selectedIndex]
         if item.type == "action" and item.action == "back" then backToMenu()
-        elseif item.type == "toggle" then item.value = not item.value
-        elseif item.type == "cycle" then cycleItem(item, 1) end
+        elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
+        elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
     elseif button == "b" then backToMenu() end
 end
 
@@ -201,11 +218,12 @@ function settings.mousepressed(x, y, button)
                         local fill = (x - barX) / barW
                         item.value = item.min + fill * (item.max - item.min)
                         item.value = math.max(item.min, math.min(item.max, item.value))
+                        applyItem(item)
                         dragIndex = i
                     end
-                elseif item.type == "action" and item.action == "back" then backToMenu()
-                elseif item.type == "toggle" then item.value = not item.value
-                elseif item.type == "cycle" then cycleItem(item, 1) end
+                    elseif item.type == "action" and item.action == "back" then backToMenu()
+                elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
+                elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
                 return
             end
         end
@@ -220,6 +238,7 @@ function settings.mousemoved(x, y)
             local fill = (x - barX) / barW
             item.value = item.min + fill * (item.max - item.min)
             item.value = math.max(item.min, math.min(item.max, item.value))
+            applyItem(item)
         end
     end
 end
@@ -238,6 +257,7 @@ function adjustSetting(dir)
     elseif item.type == "toggle" then
         item.value = not item.value
     end
+    applyItem(item)
 end
 
 function cycleItem(item, dir)
