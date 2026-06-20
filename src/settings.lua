@@ -21,8 +21,6 @@ local function applyDisplayModeRes()
         love.window.setFullscreen(false)
         if res.w > 0 and res.h > 0 then love.window.setMode(res.w, res.h)
         else love.window.setMode(1280, 720) end
-    elseif mode == "Fullscreen" then
-        love.window.setFullscreen(true, "exclusive")
     else
         love.window.setFullscreen(true, "desktop")
     end
@@ -53,7 +51,7 @@ local function buildItems()
         { label = "P2 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 2.0, step = 0.1, key = "p2Sensitivity" },
         { label = "Ball Speed",       type = "slider", value = 1.0, min = 0.5, max = 5.0, step = 0.1, key = "ballSpeed" },
         { label = "Winning Score",    type = "cycle",  value = 7,   options = {3, 5, 7, 11, 21, 0}, key = "winningScore" },
-        { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen", "Borderless"}, key = "displayMode" },
+        { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen"}, key = "displayMode" },
         { label = "Resolution",       type = "cycle",  value = "Display Native", options = {"Display Native", "720p (1280x720)", "1080p (1920x1080)", "1440p (2560x1440)", "4K (3840x2160)"}, key = "resolution" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
         { label = "--- Game ---",     type = "header" },
