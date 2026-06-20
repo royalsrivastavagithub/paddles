@@ -279,8 +279,8 @@ function game.keypressed(key)
         if key == "up" then pauseSelection = math.max(1, pauseSelection - 1)
         elseif key == "down" then pauseSelection = math.min(#pauseItems, pauseSelection + 1)
         elseif key == "return" or key == " " then
-            if pauseSelection == 1 then paused = false else backToMenu() end
-        elseif key == "escape" then paused = false end
+            if pauseSelection == 1 then paused = false; love.mouse.setVisible(false) else backToMenu() end
+        elseif key == "escape" then paused = false; love.mouse.setVisible(false) end
         return
     end
 
@@ -296,7 +296,7 @@ function game.keypressed(key)
 
     if key == "escape" then
         if state == "gameover" then backToMenu()
-        elseif state ~= "serve" then paused = true; pauseSelection = 1 end
+        elseif state ~= "serve" then paused = true; pauseSelection = 1; love.mouse.setVisible(true) end
         return
     end
 
@@ -308,8 +308,8 @@ function game.gamepadpressed(joystick, button)
         if button == "dpup" then pauseSelection = math.max(1, pauseSelection - 1)
         elseif button == "dpdown" then pauseSelection = math.min(#pauseItems, pauseSelection + 1)
         elseif button == "a" then
-            if pauseSelection == 1 then paused = false else backToMenu() end
-        elseif button == "b" or button == "start" then paused = false end
+            if pauseSelection == 1 then paused = false; love.mouse.setVisible(false) else backToMenu() end
+        elseif button == "b" or button == "start" then paused = false; love.mouse.setVisible(false) end
         return
     end
 
@@ -331,7 +331,7 @@ function game.gamepadpressed(joystick, button)
 
     if button == "start" then
         if state == "gameover" then backToMenu()
-        elseif state ~= "serve" then paused = true; pauseSelection = 1 end
+        elseif state ~= "serve" then paused = true; pauseSelection = 1; love.mouse.setVisible(true) end
         return
     end
 

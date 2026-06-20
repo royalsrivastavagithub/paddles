@@ -132,6 +132,12 @@ function switchState(newState)
 
     state = newState
 
+    if state == "menu" or state == "settings" then
+        love.mouse.setVisible(true)
+    elseif state == "playing" then
+        love.mouse.setVisible(false)
+    end
+
     if state == "menu" then
         menu.enter()
     elseif state == "playing" then
