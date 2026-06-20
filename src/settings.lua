@@ -1,6 +1,5 @@
 local settings = {}
 local input = require("src.input")
-local history = require("src.history")
 
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
@@ -57,7 +56,6 @@ local function buildItems()
         { label = "Max FPS",          type = "cycle",  value = 0,     options = {0, 30, 60, 120, 144, 165, 240, 360, 480, 1024}, key = "maxFPS" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
         { label = "--- Game ---",     type = "header" },
-        { label = "Clear History",    type = "action", action = "clearHistory" },
         { label = "Reset Settings",   type = "action", action = "resetSettings" },
     }
     for _, group in ipairs(colorGroups) do
@@ -223,7 +221,6 @@ function settings.keypressed(key)
         local item = items[selectedIndex]
         if item.type == "action" then
             if item.action == "back" then backToMenu()
-            elseif item.action == "clearHistory" then history.clear()
             elseif item.action == "resetSettings" then resetAllSettings() end
         elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
         elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
@@ -239,7 +236,6 @@ function settings.gamepadpressed(joystick, button)
         local item = items[selectedIndex]
         if item.type == "action" then
             if item.action == "back" then backToMenu()
-            elseif item.action == "clearHistory" then history.clear()
             elseif item.action == "resetSettings" then resetAllSettings() end
         elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
         elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
@@ -265,7 +261,6 @@ function settings.mousepressed(x, y, button)
                     end
                     elseif item.type == "action" then
                         if item.action == "back" then backToMenu()
-                        elseif item.action == "clearHistory" then history.clear()
                         elseif item.action == "resetSettings" then resetAllSettings() end
                 elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
                 elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end

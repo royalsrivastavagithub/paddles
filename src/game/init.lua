@@ -1,7 +1,6 @@
 local input = require("src.input")
 local entities = require("src.game.entities")
 local ai = require("src.game.ai")
-local history = require("src.history")
 
 local game = {}
 
@@ -60,13 +59,6 @@ function game.enter(m, d, sd)
 end
 
 function game.exit()
-    if state == "gameover" then
-        local winner = "Player 1"
-        if paddle2.score > paddle1.score then
-            winner = mode == "singleplayer" and "AI" or "Player 2"
-        end
-        history.add(mode, difficulty, winner, paddle1.score, paddle2.score)
-    end
 end
 
 function game.update(dt)
