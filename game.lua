@@ -37,6 +37,7 @@ local serveP2Ready = false
 local paused = false
 local pauseSelection = 1
 local pauseItems = {"Resume", "Quit to Menu"}
+local pauseStickTimer = 0
 local speedTimer = 0
 local aiReactionTimer = 0
 local aiTargetOffset = 0
@@ -63,6 +64,7 @@ function game.enter(m, d, sd)
     serveTimer = serveDelay
     paused = false
     pauseSelection = 1
+    pauseStickTimer = 0
     speedTimer = 0
     aiReactionTimer = 0
     aiTargetOffset = (math.random() * 2 - 1) * 0.4
@@ -99,13 +101,44 @@ function newBall()
 end
 
 function game.update(dt)
-    if paused then return end
+    if paused then
+        pauseStickTimer = math.max(0, pauseStickTimer - dt)
+        if pauseStickTimer <= 0 then
+            local jsticks = love.joystick.getJoysticks()
+            if #jsticks >= 1 then
+                local y = jsticks[1]:getGamepadAxis("lefty")
+                if y < -0.5 then
+                    pauseSelection = math.max(1, pauseSelection - 1)
+                    pauseStickTimer = 0.2
+                elseif y > 0.5 then
+                    pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+                    pauseStickTimer = 0.2
+                end
+            end
+        end
+        return
+    end
 
     if state == "serve" then
         if servePhase == "countdown" then
             serveTimer = serveTimer - dt
             if serveTimer <= 0 then
                 serveBall()
+            end
+        elseif servePhase == "waiting" and mode == "multiplayer" and settingsData.splitController then
+            local jsticks = love.joystick.getJoysticks()
+            if #jsticks >= 1 then
+                local ly = jsticks[1]:getGamepadAxis("lefty")
+                local ry = jsticks[1]:getGamepadAxis("righty")
+                if math.abs(ly) > 0.5 then
+                    serveP1Ready = true
+                end
+                if math.abs(ry) > 0.5 then
+                    serveP2Ready = true
+                end
+                if serveP1Ready and serveP2Ready then
+                    startCountdown()
+                end
             end
         end
         return
@@ -513,9 +546,9 @@ end
 
 function game.gamepadpressed(joystick, button)
     if paused then
-        if button == "dpup" or button == "leftstickup" then
+        if button == "dpup" then
             pauseSelection = math.max(1, pauseSelection - 1)
-        elseif button == "dpdown" or button == "leftstickdown" then
+        elseif button == "dpdown" then
             pauseSelection = math.min(#pauseItems, pauseSelection + 1)
         elseif button == "a" then
             if pauseSelection == 1 then
@@ -571,7 +604,7 @@ function game.gamepadpressed(joystick, button)
 end
 
 function isSplitP1Ready(joystick, button)
-    return button == "dpup" or button == "dpdown" or button == "leftstickup" or button == "leftstickdown"
+    return button == "dpup" or button == "dpdown"
 end
 
 function isSplitP2Ready(joystick, button)

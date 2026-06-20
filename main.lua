@@ -3,6 +3,9 @@ local game = require("game")
 local settings = require("settings")
 local input = require("input")
 
+local VIRTUAL_WIDTH = 1280
+local VIRTUAL_HEIGHT = 720
+
 local state = nil
 local gameMode = nil
 local difficulty = nil
@@ -38,6 +41,18 @@ function love.update(dt)
 end
 
 function love.draw()
+    local screenW, screenH = love.graphics.getDimensions()
+    local scale = math.min(screenW / VIRTUAL_WIDTH, screenH / VIRTUAL_HEIGHT)
+    local offsetX = (screenW - VIRTUAL_WIDTH * scale) / 2
+    local offsetY = (screenH - VIRTUAL_HEIGHT * scale) / 2
+
+    love.graphics.push()
+    love.graphics.translate(offsetX, offsetY)
+    love.graphics.scale(scale)
+    love.graphics.setScissor(offsetX, offsetY, VIRTUAL_WIDTH * scale, VIRTUAL_HEIGHT * scale)
+
+    love.graphics.setBackgroundColor(0, 0, 0)
+
     if state == "menu" then
         menu.draw()
     elseif state == "playing" then
@@ -45,6 +60,9 @@ function love.draw()
     elseif state == "settings" then
         settings.draw()
     end
+
+    love.graphics.pop()
+    love.graphics.setScissor()
 end
 
 function love.keypressed(key)
@@ -75,7 +93,14 @@ function love.joystickremoved(joystick)
     input.refresh()
 end
 
-function love.mousepressed(x, y, button)
+function love.mousepressed(sx, sy, button)
+    local screenW, screenH = love.graphics.getDimensions()
+    local scale = math.min(screenW / VIRTUAL_WIDTH, screenH / VIRTUAL_HEIGHT)
+    local offsetX = (screenW - VIRTUAL_WIDTH * scale) / 2
+    local offsetY = (screenH - VIRTUAL_HEIGHT * scale) / 2
+    local x = (sx - offsetX) / scale
+    local y = (sy - offsetY) / scale
+
     if state == "menu" then
         menu.mousepressed(x, y, button)
     elseif state == "settings" then
@@ -116,5 +141,10 @@ end
 
 function backToMenu()
     switchState("menu")
-    love.window.setFullscreen(settingsData.fullscreen)
+    if settingsData.fullscreen then
+        love.window.setFullscreen(true, "desktop")
+    else
+        love.window.setFullscreen(false)
+        love.window.setMode(1280, 720)
+    end
 end

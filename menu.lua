@@ -20,6 +20,8 @@ local difficultyItems = {
 local selectedIndex = 1
 local showingDifficulty = false
 local difficultySelectedIndex = 1
+local stickTimer = 0
+local stickDelay = 0.2
 
 function menu.load()
 end
@@ -28,16 +30,38 @@ function menu.enter()
     selectedIndex = 1
     difficultySelectedIndex = 1
     showingDifficulty = false
+    stickTimer = 0
 end
 
 function menu.exit()
 end
 
 function menu.update(dt)
+    stickTimer = math.max(0, stickTimer - dt)
+    if stickTimer > 0 then return end
+
+    local jsticks = love.joystick.getJoysticks()
+    if #jsticks < 1 then return end
+
+    local y = jsticks[1]:getGamepadAxis("lefty")
+    if y < -0.5 then
+        if showingDifficulty then
+            difficultySelectedIndex = math.max(1, difficultySelectedIndex - 1)
+        else
+            selectedIndex = math.max(1, selectedIndex - 1)
+        end
+        stickTimer = stickDelay
+    elseif y > 0.5 then
+        if showingDifficulty then
+            difficultySelectedIndex = math.min(#difficultyItems, difficultySelectedIndex + 1)
+        else
+            selectedIndex = math.min(#items, selectedIndex + 1)
+        end
+        stickTimer = stickDelay
+    end
 end
 
 function menu.draw()
-    love.graphics.setBackgroundColor(0, 0, 0)
     love.graphics.setColor(1, 1, 1)
 
     local font = love.graphics.newFont(64)
@@ -95,9 +119,9 @@ end
 
 function menu.gamepadpressed(joystick, button)
     if showingDifficulty then
-        if button == "dpup" or button == "leftstickup" then
+        if button == "dpup" then
             difficultySelectedIndex = math.max(1, difficultySelectedIndex - 1)
-        elseif button == "dpdown" or button == "leftstickdown" then
+        elseif button == "dpdown" then
             difficultySelectedIndex = math.min(#difficultyItems, difficultySelectedIndex + 1)
         elseif button == "a" then
             local item = difficultyItems[difficultySelectedIndex]
@@ -106,9 +130,9 @@ function menu.gamepadpressed(joystick, button)
             showingDifficulty = false
         end
     else
-        if button == "dpup" or button == "leftstickup" then
+        if button == "dpup" then
             selectedIndex = math.max(1, selectedIndex - 1)
-        elseif button == "dpdown" or button == "leftstickdown" then
+        elseif button == "dpdown" then
             selectedIndex = math.min(#items, selectedIndex + 1)
         elseif button == "a" then
             local item = items[selectedIndex]

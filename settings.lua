@@ -13,9 +13,12 @@ local items = {
 }
 
 local selectedIndex = 1
+local stickTimer = 0
+local stickDelay = 0.2
 
 function settings.enter()
     selectedIndex = 1
+    stickTimer = 0
     for _, item in ipairs(items) do
         if item.key then
             local val = _G.settingsData[item.key]
@@ -35,11 +38,32 @@ function settings.exit()
 end
 
 function settings.update(dt)
+    stickTimer = math.max(0, stickTimer - dt)
+    if stickTimer > 0 then return end
+
+    local jsticks = love.joystick.getJoysticks()
+    if #jsticks < 1 then return end
+
+    local gp = jsticks[1]
+    local ly = gp:getGamepadAxis("lefty")
+    local lx = gp:getGamepadAxis("leftx")
+
+    if ly < -0.5 then
+        selectedIndex = math.max(1, selectedIndex - 1)
+        stickTimer = stickDelay
+    elseif ly > 0.5 then
+        selectedIndex = math.min(#items, selectedIndex + 1)
+        stickTimer = stickDelay
+    elseif lx < -0.5 then
+        adjustSetting("left")
+        stickTimer = stickDelay * 0.5
+    elseif lx > 0.5 then
+        adjustSetting("right")
+        stickTimer = stickDelay * 0.5
+    end
 end
 
 function settings.draw()
-    love.graphics.setBackgroundColor(0, 0, 0)
-
     local font = love.graphics.newFont(48)
     love.graphics.setFont(font)
     love.graphics.setColor(1, 1, 1)
@@ -113,13 +137,13 @@ function settings.keypressed(key)
 end
 
 function settings.gamepadpressed(joystick, button)
-    if button == "dpup" or button == "leftstickup" then
+    if button == "dpup" then
         selectedIndex = math.max(1, selectedIndex - 1)
-    elseif button == "dpdown" or button == "leftstickdown" then
+    elseif button == "dpdown" then
         selectedIndex = math.min(#items, selectedIndex + 1)
-    elseif button == "dpleft" or button == "leftstickleft" then
+    elseif button == "dpleft" then
         adjustSetting("left")
-    elseif button == "dpright" or button == "leftstickright" then
+    elseif button == "dpright" then
         adjustSetting("right")
     elseif button == "a" then
         local item = items[selectedIndex]
