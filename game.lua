@@ -30,7 +30,10 @@ local ball = {}
 
 local state = nil
 local serveTimer = 0
-local serveDelay = 1.0
+local serveDelay = 3.0
+local servePhase = "waiting"
+local serveP1Ready = false
+local serveP2Ready = false
 local paused = false
 local pauseSelection = 1
 local pauseItems = {"Resume", "Quit to Menu"}
@@ -54,6 +57,9 @@ function game.enter(m, d, sd)
 
     ball = newBall()
     state = "serve"
+    servePhase = "waiting"
+    serveP1Ready = false
+    serveP2Ready = false
     serveTimer = serveDelay
     paused = false
     pauseSelection = 1
@@ -96,9 +102,11 @@ function game.update(dt)
     if paused then return end
 
     if state == "serve" then
-        serveTimer = serveTimer - dt
-        if serveTimer <= 0 then
-            serveBall()
+        if servePhase == "countdown" then
+            serveTimer = serveTimer - dt
+            if serveTimer <= 0 then
+                serveBall()
+            end
         end
         return
     end
@@ -311,6 +319,11 @@ function reflectBall(paddle)
     ball.dy = math.sin(angle) * ball.speed
 end
 
+function startCountdown()
+    servePhase = "countdown"
+    serveTimer = 3.0
+end
+
 function serveBall()
     ball.x = WINDOW_WIDTH / 2 - BALL_SIZE / 2
     ball.y = WINDOW_HEIGHT / 2 - BALL_SIZE / 2
@@ -334,9 +347,22 @@ function checkWin()
     if paddle1.score >= WINNING_SCORE or paddle2.score >= WINNING_SCORE then
         state = "gameover"
     else
+        resetPositions()
         state = "serve"
+        servePhase = "waiting"
+        serveP1Ready = false
+        serveP2Ready = false
         serveTimer = serveDelay
     end
+end
+
+function resetPositions()
+    paddle1.y = WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2
+    paddle2.y = WINDOW_HEIGHT / 2 - PADDLE_HEIGHT / 2
+    ball.x = WINDOW_WIDTH / 2 - BALL_SIZE / 2
+    ball.y = WINDOW_HEIGHT / 2 - BALL_SIZE / 2
+    ball.dx = 0
+    ball.dy = 0
 end
 
 function game.draw()
@@ -368,25 +394,33 @@ function game.draw()
     love.graphics.rectangle("fill", paddle1.x, paddle1.y, paddle1.width, paddle1.height)
     love.graphics.rectangle("fill", paddle2.x, paddle2.y, paddle2.width, paddle2.height)
 
-    local ballFlash = math.floor(serveTimer * 10) % 2 == 0
-    if state == "serve" and ballFlash then
-        love.graphics.setColor(0.5, 0.5, 0.5)
-    else
-        love.graphics.setColor(1, 1, 1)
-    end
+    love.graphics.setColor(1, 1, 1)
     love.graphics.rectangle("fill", ball.x, ball.y, ball.width, ball.height)
 
     if state == "serve" then
-        local cd = math.ceil(serveTimer)
-        if cd > 0 then
-            love.graphics.setFont(scoreFont)
-            love.graphics.setColor(1, 1, 0)
-            love.graphics.print(tostring(cd), (WINDOW_WIDTH - scoreFont:getWidth(tostring(cd))) / 2, WINDOW_HEIGHT / 2 + 10)
+        if servePhase == "waiting" then
+            love.graphics.setFont(messageFont)
+            if mode == "singleplayer" then
+                love.graphics.setColor(0.5, 0.5, 0.5)
+                local msg = "Press any key to serve..."
+                love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 + 60)
+            else
+                love.graphics.setColor(serveP1Ready and 0.3 or 1, serveP1Ready and 1 or 1, serveP1Ready and 0.3 or 1)
+                local msg1 = "P1: " .. (serveP1Ready and "READY" or "PRESS W/S")
+                love.graphics.print(msg1, (WINDOW_WIDTH - messageFont:getWidth(msg1)) / 2, WINDOW_HEIGHT / 2 + 40)
+
+                love.graphics.setColor(serveP2Ready and 0.3 or 1, serveP2Ready and 1 or 1, serveP2Ready and 0.3 or 1)
+                local msg2 = "P2: " .. (serveP2Ready and "READY" or "PRESS UP/DOWN")
+                love.graphics.print(msg2, (WINDOW_WIDTH - messageFont:getWidth(msg2)) / 2, WINDOW_HEIGHT / 2 + 80)
+            end
+        elseif servePhase == "countdown" then
+            local cd = math.ceil(serveTimer)
+            if cd > 0 then
+                love.graphics.setFont(scoreFont)
+                love.graphics.setColor(1, 1, 0)
+                love.graphics.print(tostring(cd), (WINDOW_WIDTH - scoreFont:getWidth(tostring(cd))) / 2, WINDOW_HEIGHT / 2 + 10)
+            end
         end
-        love.graphics.setFont(messageFont)
-        love.graphics.setColor(0.5, 0.5, 0.5)
-        local msg = "Press any key to skip"
-        love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 + 60)
     end
 
     if state == "gameover" then
@@ -456,8 +490,20 @@ function game.keypressed(key)
         return
     end
 
-    if state == "serve" then
-        serveTimer = 0
+    if state == "serve" and servePhase == "waiting" then
+        if mode == "singleplayer" then
+            startCountdown()
+        else
+            if key == "w" or key == "s" then
+                serveP1Ready = true
+            elseif key == "up" or key == "down" then
+                serveP2Ready = true
+            end
+            if serveP1Ready and serveP2Ready then
+                startCountdown()
+            end
+        end
+        return
     end
 
     if state == "gameover" and (key == "return" or key == " ") then
@@ -493,8 +539,21 @@ function game.gamepadpressed(joystick, button)
         return
     end
 
-    if state == "serve" then
-        serveTimer = 0
+    if state == "serve" and servePhase == "waiting" then
+        if mode == "singleplayer" then
+            startCountdown()
+        else
+            local jsticks = love.joystick.getJoysticks()
+            if joystick == jsticks[1] or #jsticks == 1 then
+                serveP1Ready = true
+            elseif joystick == jsticks[2] then
+                serveP2Ready = true
+            end
+            if serveP1Ready and serveP2Ready then
+                startCountdown()
+            end
+        end
+        return
     end
 
     if state == "gameover" and button == "a" then
