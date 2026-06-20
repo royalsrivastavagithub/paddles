@@ -71,14 +71,22 @@ function menu.draw()
     local font = love.graphics.newFont("assets/fonts/font.ttf", math.floor(64 * us))
     love.graphics.setFont(font)
     love.graphics.setColor(mc.r, mc.g, mc.b)
-    local titleW = font:getWidth("PONG")
-    love.graphics.print("PONG", (WINDOW_WIDTH - titleW) / 2, 100)
+    local titleW = font:getWidth("paddles")
+    love.graphics.print("paddles", (WINDOW_WIDTH - titleW) / 2, 100)
 
     if showingDifficulty then
         drawMenuItems(difficultyItems, difficultySelectedIndex, 300, mc, sc)
     else
         drawMenuItems(items, selectedIndex, 300, mc, sc)
     end
+
+    local footerFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(24 * us))
+    love.graphics.setFont(footerFont)
+    love.graphics.setColor(mc.r, mc.g, mc.b)
+    love.graphics.print("Created by : Royal Srivastava", 20, WINDOW_HEIGHT - 40)
+    local versionText = "pong v0.9"
+    local versionWidth = footerFont:getWidth(versionText)
+    love.graphics.print(versionText, WINDOW_WIDTH - versionWidth - 20, WINDOW_HEIGHT - 40)
 end
 
 function drawMenuItems(list, selectedIdx, startY, menuColor, selectedColor)
