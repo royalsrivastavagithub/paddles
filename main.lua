@@ -1,7 +1,7 @@
-local menu = require("menu")
-local game = require("game")
-local settings = require("settings")
-local input = require("input")
+local menu = require("src.menu")
+local game = require("src.game.init")
+local settings = require("src.settings")
+local input = require("src.input")
 
 local VIRTUAL_WIDTH = 1280
 local VIRTUAL_HEIGHT = 720
@@ -31,10 +31,10 @@ function love.load()
         ballColor = {r=1, g=1, b=1},
         scoreColor = {r=1, g=1, b=1},
     }
+    loadSettings()
 
     input.load()
     menu.load()
-
     state = "menu"
 end
 
@@ -124,6 +124,7 @@ function switchState(newState)
         menu.exit()
     elseif state == "settings" then
         settings.exit()
+        saveSettings()
     end
 
     state = newState
@@ -155,5 +156,36 @@ function backToMenu()
     else
         love.window.setFullscreen(false)
         love.window.setMode(1280, 720)
+    end
+end
+
+function saveSettings()
+    local lines = {"return {"}
+    for k, v in pairs(settingsData) do
+        if type(v) == "table" then
+            table.insert(lines, string.format("  %s = {r=%.3f, g=%.3f, b=%.3f},", k, v.r, v.g, v.b))
+        elseif type(v) == "string" then
+            table.insert(lines, string.format("  %s = %q,", k, v))
+        elseif type(v) == "boolean" then
+            table.insert(lines, string.format("  %s = %s,", k, tostring(v)))
+        else
+            table.insert(lines, string.format("  %s = %s,", k, tostring(v)))
+        end
+    end
+    table.insert(lines, "}")
+    love.filesystem.write("settings.dat", table.concat(lines, "\n"))
+end
+
+function loadSettings()
+    local f = love.filesystem.load("settings.dat")
+    if f then
+        local ok, saved = pcall(f)
+        if ok and saved then
+            for k, v in pairs(settingsData) do
+                if saved[k] ~= nil then
+                    settingsData[k] = saved[k]
+                end
+            end
+        end
     end
 end

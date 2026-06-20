@@ -65,7 +65,7 @@ function menu.draw()
     local mc = _G.settingsData.menuColor or {r=1, g=1, b=1}
     local sc = _G.settingsData.selectedColor or {r=1, g=1, b=0}
 
-    local font = love.graphics.newFont("font.ttf", 64)
+    local font = love.graphics.newFont("assets/fonts/font.ttf", 64)
     love.graphics.setFont(font)
     love.graphics.setColor(mc.r, mc.g, mc.b)
     local titleW = font:getWidth("PONG")
@@ -79,7 +79,7 @@ function menu.draw()
 end
 
 function drawMenuItems(list, selectedIdx, startY, menuColor, selectedColor)
-    local font = love.graphics.newFont("font.ttf", 36)
+    local font = love.graphics.newFont("assets/fonts/font.ttf", 36)
     love.graphics.setFont(font)
 
     for i, item in ipairs(list) do
@@ -95,104 +95,59 @@ end
 
 function menu.keypressed(key)
     if showingDifficulty then
-        if key == "up" then
-            difficultySelectedIndex = math.max(1, difficultySelectedIndex - 1)
-        elseif key == "down" then
-            difficultySelectedIndex = math.min(#difficultyItems, difficultySelectedIndex + 1)
-        elseif key == "return" or key == " " then
-            local item = difficultyItems[difficultySelectedIndex]
-            handleDifficultyAction(item.action)
-        elseif key == "escape" then
-            showingDifficulty = false
-        end
+        if key == "up" then difficultySelectedIndex = math.max(1, difficultySelectedIndex - 1)
+        elseif key == "down" then difficultySelectedIndex = math.min(#difficultyItems, difficultySelectedIndex + 1)
+        elseif key == "return" or key == " " then handleDifficultyAction(difficultyItems[difficultySelectedIndex].action)
+        elseif key == "escape" then showingDifficulty = false end
     else
-        if key == "up" then
-            selectedIndex = math.max(1, selectedIndex - 1)
-        elseif key == "down" then
-            selectedIndex = math.min(#items, selectedIndex + 1)
-        elseif key == "return" or key == " " then
-            local item = items[selectedIndex]
-            handleMainAction(item.action)
-        elseif key == "escape" then
-            love.event.quit()
-        end
+        if key == "up" then selectedIndex = math.max(1, selectedIndex - 1)
+        elseif key == "down" then selectedIndex = math.min(#items, selectedIndex + 1)
+        elseif key == "return" or key == " " then handleMainAction(items[selectedIndex].action)
+        elseif key == "escape" then love.event.quit() end
     end
 end
 
 function menu.gamepadpressed(joystick, button)
     if showingDifficulty then
-        if button == "dpup" then
-            difficultySelectedIndex = math.max(1, difficultySelectedIndex - 1)
-        elseif button == "dpdown" then
-            difficultySelectedIndex = math.min(#difficultyItems, difficultySelectedIndex + 1)
-        elseif button == "a" then
-            local item = difficultyItems[difficultySelectedIndex]
-            handleDifficultyAction(item.action)
-        elseif button == "b" then
-            showingDifficulty = false
-        end
+        if button == "dpup" then difficultySelectedIndex = math.max(1, difficultySelectedIndex - 1)
+        elseif button == "dpdown" then difficultySelectedIndex = math.min(#difficultyItems, difficultySelectedIndex + 1)
+        elseif button == "a" then handleDifficultyAction(difficultyItems[difficultySelectedIndex].action)
+        elseif button == "b" then showingDifficulty = false end
     else
-        if button == "dpup" then
-            selectedIndex = math.max(1, selectedIndex - 1)
-        elseif button == "dpdown" then
-            selectedIndex = math.min(#items, selectedIndex + 1)
-        elseif button == "a" then
-            local item = items[selectedIndex]
-            handleMainAction(item.action)
-        elseif button == "b" or button == "start" then
-            love.event.quit()
-        end
+        if button == "dpup" then selectedIndex = math.max(1, selectedIndex - 1)
+        elseif button == "dpdown" then selectedIndex = math.min(#items, selectedIndex + 1)
+        elseif button == "a" then handleMainAction(items[selectedIndex].action)
+        elseif button == "b" or button == "start" then love.event.quit() end
     end
 end
 
 function menu.mousepressed(x, y, button)
-    if button == 1 then
-        if showingDifficulty then
-            local idx = hitTestMenuItems(difficultyItems, 300, y)
-            if idx then
-                difficultySelectedIndex = idx
-                local item = difficultyItems[idx]
-                handleDifficultyAction(item.action)
-            end
-        else
-            local idx = hitTestMenuItems(items, 300, y)
-            if idx then
-                selectedIndex = idx
-                handleMainAction(items[idx].action)
-            end
-        end
+    if button ~= 1 then return end
+    if showingDifficulty then
+        local idx = hitTestMenuItems(difficultyItems, 300, y)
+        if idx then difficultySelectedIndex = idx; handleDifficultyAction(difficultyItems[idx].action) end
+    else
+        local idx = hitTestMenuItems(items, 300, y)
+        if idx then selectedIndex = idx; handleMainAction(items[idx].action) end
     end
 end
 
 function hitTestMenuItems(list, startY, mouseY)
     for i = 1, #list do
         local itemY = startY + (i - 1) * 60
-        if mouseY >= itemY - 20 and mouseY <= itemY + 40 then
-            return i
-        end
+        if mouseY >= itemY - 20 and mouseY <= itemY + 40 then return i end
     end
-    return nil
 end
 
 function handleMainAction(action)
-    if action == "singleplayer" then
-        showingDifficulty = true
-        difficultySelectedIndex = 1
-    elseif action == "multiplayer" then
-        startGame("multiplayer", nil)
-    elseif action == "settings" then
-        startSettings()
-    elseif action == "exit" then
-        love.event.quit()
-    end
+    if action == "singleplayer" then showingDifficulty = true; difficultySelectedIndex = 1
+    elseif action == "multiplayer" then startGame("multiplayer", nil)
+    elseif action == "settings" then startSettings()
+    elseif action == "exit" then love.event.quit() end
 end
 
 function handleDifficultyAction(action)
-    if action == "back" then
-        showingDifficulty = false
-    else
-        startGame("singleplayer", action)
-    end
+    if action == "back" then showingDifficulty = false else startGame("singleplayer", action) end
 end
 
 return menu
