@@ -60,13 +60,15 @@ function love.draw()
     local offsetX = (screenW - VIRTUAL_WIDTH * scale) / 2
     local offsetY = (screenH - VIRTUAL_HEIGHT * scale) / 2
 
+    local bg = settingsData.bgColor or {r=0, g=0, b=0}
+    love.graphics.setBackgroundColor(bg.r, bg.g, bg.b)
+    love.graphics.setColor(bg.r, bg.g, bg.b)
+    love.graphics.rectangle("fill", 0, 0, screenW, screenH)
+
     love.graphics.push()
     love.graphics.translate(offsetX, offsetY)
     love.graphics.scale(scale)
     love.graphics.setScissor(offsetX, offsetY, VIRTUAL_WIDTH * scale, VIRTUAL_HEIGHT * scale)
-
-    local bg = settingsData.bgColor or {r=0, g=0, b=0}
-    love.graphics.setBackgroundColor(bg.r, bg.g, bg.b)
 
     if state == "menu" then
         menu.draw()
