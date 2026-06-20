@@ -175,7 +175,7 @@ function settings.draw()
                 local display = item.label
                 if item.type == "cycle" then
                     local valStr = tostring(item.value)
-                    if item.key == "winningScore" and item.value == 0 then valStr = "∞" end
+                    if item.key == "winningScore" and item.value == 0 then valStr = "Infinite" end
                     if item.key == "maxFPS" and item.value == 0 then valStr = "Unlimited" end
                     display = item.label .. ": " .. valStr
                 elseif item.type == "slider" then
