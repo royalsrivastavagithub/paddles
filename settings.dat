@@ -1,11 +1,9 @@
 return {
-  resolution = "Display Native",
-  paddle2Color = {r=1.000, g=1.000, b=1.000},
   winningScore = 7,
   splitController = false,
-  bgColor = {r=1.000, g=1.000, b=1.000},
+  bgColor = {r=0.050, g=0.050, b=0.050},
   menuColor = {r=1.000, g=1.000, b=1.000},
-  selectedColor = {r=1.000, g=1.000, b=1.000},
+  selectedColor = {r=1.000, g=1.000, b=0.000},
   paddle1Color = {r=1.000, g=1.000, b=1.000},
   difficulty = "medium",
   ballColor = {r=1.000, g=1.000, b=1.000},
@@ -14,4 +12,6 @@ return {
   p2Sensitivity = 1,
   ballSpeed = 1,
   displayMode = "Fullscreen",
+  resolution = "Display Native",
+  paddle2Color = {r=1.000, g=1.000, b=1.000},
 }

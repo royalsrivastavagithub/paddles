@@ -14,22 +14,22 @@ function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy)
 
     if not coming then
         reactionTimer = 0
-        local mult = difficulty == "easy" and 0.3 or 0.5
+        local mult = difficulty == "medium" and 0.5 or 0.4
         moveTowardCenter(paddle, arenaH, mult)
         return
     end
 
     if difficulty == "easy" then
         reactionTimer = reactionTimer + dt
-        if reactionTimer < 0.4 then
+        if reactionTimer < 0.15 then
             paddle.dy = 0
             return
         end
         local ballY = ball.y + ball.height / 2
-        local targetY = ballY + (math.random() - 0.5) * paddle.height * 0.8
+        local targetY = ballY + (math.random() - 0.5) * paddle.height * 0.35
         local diff = targetY - (paddle.y + paddle.height / 2)
-        local moveSpeed = paddle.speed * 0.4
-        if math.abs(diff) > paddle.height * 0.3 then
+        local moveSpeed = paddle.speed * 0.65
+        if math.abs(diff) > paddle.height * 0.12 then
             paddle.dy = (diff > 0 and 1 or -1) * moveSpeed
         else
             paddle.dy = 0
