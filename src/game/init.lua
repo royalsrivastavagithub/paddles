@@ -41,8 +41,14 @@ local ballTrail = {}
 local paddle1Trail = {}
 local paddle2Trail = {}
 
+local function getTrailLen()
+    local v = settingsData.trail
+    if type(v) == "boolean" then return v and 6 or 0 end
+    return v or 0
+end
+
 local function pushTrail(trail, x, y, w, h)
-    local maxLen = settingsData.trail or 0
+    local maxLen = getTrailLen()
     if maxLen == 0 then return end
     table.insert(trail, 1, {x = x, y = y, w = w, h = h})
     while #trail > maxLen do table.remove(trail) end
@@ -182,7 +188,7 @@ function game.update(dt)
     updatePaddle2(dt)
     updateBall(dt)
 
-    local trailLen = settingsData.trail or 0
+    local trailLen = getTrailLen()
     if trailLen > 0 then
         pushTrail(paddle1Trail, paddle1.x, paddle1.y, paddle1.width, paddle1.height)
         pushTrail(paddle2Trail, paddle2.x, paddle2.y, paddle2.width, paddle2.height)
@@ -390,7 +396,7 @@ function game.draw()
         love.graphics.rectangle("fill", WINDOW_WIDTH / 2 - 2, i, 4, 12)
     end
 
-    local trailLen = settingsData.trail or 0
+    local trailLen = getTrailLen()
     if trailLen > 0 then
         for i, t in ipairs(paddle1Trail) do
             local alpha = 1 - (i - 1) / trailLen
