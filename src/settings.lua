@@ -61,7 +61,6 @@ local function buildItems()
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
         { label = "Mouse Control",    type = "toggle", value = false, key = "mouseControl" },
         { label = "Sound",            type = "toggle", value = true,  key = "soundEnabled" },
-        { label = "Trail",            type = "toggle", value = true,  key = "trail" },
         { label = "Font Size",        type = "slider", value = 1.0, min = 0.6, max = 1.8, step = 0.1, key = "uiScale" },
 
     }
@@ -408,7 +407,6 @@ function resetAllSettings()
         splitController = false,
         mouseControl = false,
         soundEnabled = true,
-        trail = true,
         uiScale = 1.0,
         vSync = true,
         maxFPS = 0,

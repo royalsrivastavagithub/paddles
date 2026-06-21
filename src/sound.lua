@@ -3,31 +3,6 @@ local sound = {}
 local SAMPLE_RATE = 44100
 local AMPLITUDE = 0.3
 
-local function applyReverb(data)
-    local samples = data:getSampleCount()
-    local delaySmps = math.floor(0.035 * SAMPLE_RATE)
-    local preDelay = math.floor(0.015 * SAMPLE_RATE)
-    local numTaps = 8
-    local total = samples + preDelay + delaySmps * numTaps
-    local out = love.sound.newSoundData(total, SAMPLE_RATE, 16, 1)
-
-    for i = 0, samples - 1 do
-        out:setSample(i, data:getSample(i))
-    end
-
-    for i = 0, samples - 1 do
-        local s = data:getSample(i)
-        for j = 1, numTaps do
-            local idx = i + preDelay + delaySmps * j
-            if idx < total then
-                out:setSample(idx, out:getSample(idx) + s * (0.7 ^ j))
-            end
-        end
-    end
-
-    return out
-end
-
 local function generateSoundData(waveType, frequency, duration)
     local numSamples = math.max(1, math.floor(duration * SAMPLE_RATE))
     local data = love.sound.newSoundData(numSamples, SAMPLE_RATE, 16, 1)
@@ -87,22 +62,30 @@ local function enabled()
 end
 
 function sound.load()
-    highlightSource = love.audio.newSource(applyReverb(generateSoundData("square", 1000, 0.06)))
+    local highlightData = generateSoundData("square", 1000, 0.06)
+    highlightSource = love.audio.newSource(highlightData)
 
-    enterSource = love.audio.newSource(applyReverb(generateTwoTone(1500, 2000, 0.16)))
+    local enterData = generateTwoTone(1500, 2000, 0.16)
+    enterSource = love.audio.newSource(enterData)
 
-    escapeSource = love.audio.newSource(applyReverb(generateTwoTone(2000, 1500, 0.16)))
+    local escapeData = generateTwoTone(2000, 1500, 0.16)
+    escapeSource = love.audio.newSource(escapeData)
 
     local c5 = 523.25
     local f5 = c5 * math.pow(2, 5 / 12)
-    paddle1Source = love.audio.newSource(applyReverb(generateSoundData("sine", c5, 0.12)))
-    paddle2Source = love.audio.newSource(applyReverb(generateSoundData("sine", f5, 0.12)))
+    local p1Data = generateSoundData("sine", c5, 0.12)
+    local p2Data = generateSoundData("sine", f5, 0.12)
+    paddle1Source = love.audio.newSource(p1Data)
+    paddle2Source = love.audio.newSource(p2Data)
 
-    scoreSource = love.audio.newSource(applyReverb(generateSoundData("sine", 600, 0.1)))
+    local scoreData = generateSoundData("sine", 600, 0.1)
+    scoreSource = love.audio.newSource(scoreData)
 
-    winSource = love.audio.newSource(applyReverb(generateThreeTone({523, 659, 784}, 0.08)))
+    local winData = generateThreeTone({523, 659, 784}, 0.08)
+    winSource = love.audio.newSource(winData)
 
-    loseSource = love.audio.newSource(applyReverb(generateThreeTone({784, 659, 523}, 0.08)))
+    local loseData = generateThreeTone({784, 659, 523}, 0.08)
+    loseSource = love.audio.newSource(loseData)
 end
 
 function sound.playHighlight()
@@ -191,7 +174,7 @@ function sound.playBallBounce()
         data:setSample(i, sample * (AMPLITUDE * 0.6))
     end
 
-    local source = love.audio.newSource(applyReverb(data))
+    local source = love.audio.newSource(data)
     source:play()
 end
 
