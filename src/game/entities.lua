@@ -132,6 +132,7 @@ function entities.reflectBall(ball, paddle, dir)
     offset = entities.clamp(offset, -1, 1)
 
     local angle = (paddle.minAngle + math.abs(offset) * (paddle.maxAngle - paddle.minAngle)) * (offset >= 0 and 1 or -1)
+    angle = angle + math.rad(math.random(-3, 3))
     ball.speed = math.min(entities.MAX_BALL_SPEED, ball.speed * entities.BALL_SPEED_INCREASE)
 
     ball.dx = dir * math.cos(angle) * ball.speed

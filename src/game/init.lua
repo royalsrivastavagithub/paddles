@@ -46,6 +46,13 @@ function game.enter(m, d, sd)
     local p1s = settingsData.p1Sensitivity or 1.0
     local p2s = settingsData.p2Sensitivity or 1.0
 
+    if mode == "singleplayer" then
+        p2s = 1.0
+    elseif mode == "aivsai" then
+        p1s = 1.0
+        p2s = 1.0
+    end
+
     entities.MAX_BALL_SPEED = settingsData.maxBallSpeed or 1200
 
     paddle1 = entities.newPaddle(entities.PADDLE_OFFSET, WINDOW_HEIGHT / 2 - entities.PADDLE_HEIGHT / 2, p1s)

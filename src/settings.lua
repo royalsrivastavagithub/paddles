@@ -51,8 +51,8 @@ local function buildItems()
     items = {
         { label = "P1 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 10.0, step = 0.1, key = "p1Sensitivity" },
         { label = "P2 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 10.0, step = 0.1, key = "p2Sensitivity" },
-        { label = "Ball Speed",       type = "slider", value = 1.0, min = 0.5, max = 1.5, step = 0.1, key = "ballSpeed" },
-        { label = "Max Ball Speed",   type = "slider", value = 1200, min = 600, max = 2000, step = 50, key = "maxBallSpeed" },
+        { label = "Ball Speed",       type = "slider", value = 1.0, min = 0.5, max = 5.0, step = 0.1, key = "ballSpeed" },
+        { label = "Max Ball Speed",   type = "slider", value = 1200, min = 600, max = 5000, step = 50, key = "maxBallSpeed" },
         { label = "Winning Score",    type = "cycle",  value = 7,   options = {3, 5, 7, 11, 21, 0}, key = "winningScore" },
         { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen"}, key = "displayMode" },
         { label = "Resolution",       type = "cycle",  value = "Display Native", options = {"Display Native", "720p (1280x720)", "1080p (1920x1080)", "1440p (2560x1440)", "4K (3840x2160)"}, key = "resolution" },
