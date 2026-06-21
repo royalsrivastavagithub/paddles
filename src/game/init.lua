@@ -187,9 +187,9 @@ end
 
 function updatePaddle2(dt)
     if mode == "singleplayer" then
-        ai.update(paddle2, ball, difficulty, dt, WINDOW_HEIGHT, paddle1.dy)
+        ai.update(paddle2, ball, difficulty, dt, WINDOW_HEIGHT, paddle1.dy, false)
     elseif mode == "aivsai" then
-        ai.update(paddle2, ball, aiDiff2 or "easy", dt, WINDOW_HEIGHT, paddle1.dy)
+        ai.update(paddle2, ball, aiDiff2 or "easy", dt, WINDOW_HEIGHT, paddle1.dy, false)
     else
         if input.isP2Up() then
             paddle2.dy = -paddle2.speed
