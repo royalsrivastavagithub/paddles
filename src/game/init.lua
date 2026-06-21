@@ -282,7 +282,7 @@ function game.draw()
         local msg = msgs[godLosePhase]
         love.graphics.print(msg, (WINDOW_WIDTH - messageFont:getWidth(msg)) / 2, WINDOW_HEIGHT / 2 - 50)
         if paused then
-            love.graphics.setColor(0, 0, 0, 180)
+            love.graphics.setColor(bg.r, bg.g, bg.b, 180)
             love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
             love.graphics.setFont(messageFont)
             love.graphics.setColor(sel.r, sel.g, sel.b)
@@ -387,7 +387,7 @@ function game.draw()
     end
 
     if paused then
-        love.graphics.setColor(0, 0, 0, 180)
+        love.graphics.setColor(bg.r, bg.g, bg.b, 180)
         love.graphics.rectangle("fill", 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
         love.graphics.setFont(messageFont)
         love.graphics.setColor(sel.r, sel.g, sel.b)
