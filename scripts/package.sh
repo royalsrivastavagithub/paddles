@@ -6,6 +6,7 @@ LOVE_VERSION="11.5"
 
 rm -rf "$DIST"
 mkdir -p "$DIST/linux/icons" "$DIST/windows" "$DIST/love"
+[ -f "$ROOT/assets/icons/paddles.png" ] && cp "$ROOT/assets/icons/paddles.png" "$DIST/linux/icons/paddles.png"
 
 echo "Building paddles.love..."
 cd "$ROOT"
