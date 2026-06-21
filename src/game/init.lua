@@ -279,6 +279,7 @@ function startCountdown()
 end
 
 function serveBall()
+    resetTrails()
     ball.x = WINDOW_WIDTH / 2 - entities.BALL_SIZE / 2
     ball.y = WINDOW_HEIGHT / 2 - entities.BALL_SIZE / 2
     local mult = settingsData.ballSpeed
@@ -512,7 +513,13 @@ function game.keypressed(key)
     end
 
     if state == "serve" and servePhase == "waiting" then
-        if mode == "singleplayer" then startCountdown()
+        if mode == "singleplayer" then
+            if key == "escape" then
+                sound.playEscape()
+                backToMenu()
+                return
+            end
+            startCountdown()
         else
             if key == "w" or key == "s" then serveP1Ready = true
             elseif key == "up" or key == "down" then serveP2Ready = true end

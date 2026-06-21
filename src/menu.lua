@@ -4,6 +4,16 @@ local sound = require("src.sound")
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
 
+local _fontCache = {}
+local _lastUs = nil
+local function _font(path, size)
+    local us = _G.settingsData.uiScale or 1.0
+    if us ~= _lastUs then _fontCache = {}; _lastUs = us end
+    local k = path .. size
+    if not _fontCache[k] then _fontCache[k] = love.graphics.newFont(path, math.floor(size * us)) end
+    return _fontCache[k]
+end
+
 local items = {
     { label = "Singleplayer", action = "singleplayer" },
     { label = "Multiplayer",   action = "multiplayer" },
@@ -80,8 +90,7 @@ function menu.draw()
     local mc = _G.settingsData.menuColor or {r=1, g=1, b=1}
     local sc = _G.settingsData.selectedColor or {r=1, g=1, b=0}
 
-    local us = _G.settingsData.uiScale or 1.0
-    local font = love.graphics.newFont("assets/fonts/font.ttf", math.floor(64 * us))
+    local font = _font("assets/fonts/font.ttf", 64)
     love.graphics.setFont(font)
     love.graphics.setColor(mc.r, mc.g, mc.b)
     local titleW = font:getWidth("paddles")
@@ -93,7 +102,7 @@ function menu.draw()
         drawMenuItems(items, selectedIndex, 300, mc, sc)
     end
 
-    local footerFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(24 * us))
+    local footerFont = _font("assets/fonts/font.ttf", 24)
     love.graphics.setFont(footerFont)
     love.graphics.setColor(mc.r, mc.g, mc.b)
     love.graphics.print("Author : Royal Srivastava", 20, WINDOW_HEIGHT - 40)
@@ -103,8 +112,7 @@ function menu.draw()
 end
 
 function drawMenuItems(list, selectedIdx, startY, menuColor, selectedColor)
-    local us = _G.settingsData.uiScale or 1.0
-    local font = love.graphics.newFont("assets/fonts/font.ttf", math.floor(36 * us))
+    local font = _font("assets/fonts/font.ttf", 36)
     love.graphics.setFont(font)
 
     for i, item in ipairs(list) do

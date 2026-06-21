@@ -154,6 +154,7 @@ function predictBallArrival(ball, paddleX, arenaH, isLeft)
     else
         if ball.dx <= 0 then return nil end
     end
+    if ball.dx == 0 then return nil end
     local time = (paddleX - ball.x) / ball.dx
     if time <= 0 then return nil end
     local halfBall = ball.height / 2

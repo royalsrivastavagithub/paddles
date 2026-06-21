@@ -11,9 +11,15 @@ local p2Index = 1
 local selectedItem = 1
 local prevSelectedItem = 1
 local items = {"P1 Difficulty", "P2 Difficulty", "Start Game", "Back"}
-local titleFont = nil
-local itemFont = nil
-local detailFont = nil
+local _fontCache = {}
+local _lastUs = nil
+local function _font(path, size)
+    local us = _G.settingsData.uiScale or 1.0
+    if us ~= _lastUs then _fontCache = {}; _lastUs = us end
+    local k = path .. size
+    if not _fontCache[k] then _fontCache[k] = love.graphics.newFont(path, math.floor(size * us)) end
+    return _fontCache[k]
+end
 
 function aiselect.enter()
     p1Index = 1
@@ -29,10 +35,9 @@ function aiselect.update(dt)
 end
 
 function aiselect.draw()
-    local us = _G.settingsData.uiScale or 1.0
-    local titleFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(36 * us))
-    local itemFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(28 * us))
-    local detailFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(22 * us))
+    local titleFont = _font("assets/fonts/font.ttf", 36)
+    local itemFont = _font("assets/fonts/font.ttf", 28)
+    local detailFont = _font("assets/fonts/font.ttf", 22)
     local bg = _G.settingsData.bgColor or {r=0, g=0, b=0}
     local sel = _G.settingsData.selectedColor or {r=1, g=1, b=0}
     local mc = _G.settingsData.menuColor or {r=1, g=1, b=1}

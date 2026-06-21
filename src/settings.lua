@@ -47,6 +47,16 @@ local visibleRange = 13
 local dragIndex = nil
 local scrollDrag = false
 
+local _fontCache = {}
+local _lastUs = nil
+local function _font(path, size)
+    local us = _G.settingsData.uiScale or 1.0
+    if us ~= _lastUs then _fontCache = {}; _lastUs = us end
+    local k = path .. size
+    if not _fontCache[k] then _fontCache[k] = love.graphics.newFont(path, math.floor(size * us)) end
+    return _fontCache[k]
+end
+
 local function buildItems()
     items = {
         { label = "P1 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 10.0, step = 0.1, key = "p1Sensitivity" },
@@ -177,9 +187,8 @@ function settings.update(dt)
 end
 
 function settings.draw()
-    local us = _G.settingsData.uiScale or 1.0
-    local titleFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(40 * us))
-    local itemFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(22 * us))
+    local titleFont = _font("assets/fonts/font.ttf", 40)
+    local itemFont = _font("assets/fonts/font.ttf", 22)
 
     love.graphics.setFont(titleFont)
     local mc = _G.settingsData.menuColor or {r=1, g=1, b=1}
@@ -192,7 +201,7 @@ function settings.draw()
 
     for i, item in ipairs(items) do
         local y = 115 + (i - 1 - scrollOffset) * 45
-        if y < 80 or y > 710 then end
+
 
         if y >= 80 and y <= 710 then
             if item.type == "header" then
@@ -325,14 +334,14 @@ function settings.mousepressed(x, y, button)
                         applyItem(item)
                         dragIndex = i
                     end
-                    elseif item.type == "action" then
-                        if item.action == "back" then
-                            sound.playEscape()
-                            backToMenu()
-                        elseif item.action == "resetSettings" then
-                            sound.playEnter()
-                            resetAllSettings()
-                        end
+                elseif item.type == "action" then
+                    if item.action == "back" then
+                        sound.playEscape()
+                        backToMenu()
+                    elseif item.action == "resetSettings" then
+                        sound.playEnter()
+                        resetAllSettings()
+                    end
                 elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
                 elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
                 return
@@ -394,6 +403,10 @@ function settings.wheelmoved(y)
         selectedIndex = math.max(1, selectedIndex - 1)
     elseif y < 0 then
         selectedIndex = math.min(#items, selectedIndex + 1)
+    end
+    while items[selectedIndex].type == "header" do
+        selectedIndex = selectedIndex + (y > 0 and -1 or 1)
+        selectedIndex = math.max(1, math.min(#items, selectedIndex))
     end
     if selectedIndex ~= old then sound.playHighlight() end
     scrollToSelected()
