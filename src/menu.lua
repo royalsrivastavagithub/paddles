@@ -96,8 +96,8 @@ function menu.draw()
     local footerFont = love.graphics.newFont("assets/fonts/font.ttf", math.floor(24 * us))
     love.graphics.setFont(footerFont)
     love.graphics.setColor(mc.r, mc.g, mc.b)
-    love.graphics.print("Created by : Royal Srivastava", 20, WINDOW_HEIGHT - 40)
-    local versionText = "pong v0.9"
+    love.graphics.print("Author : Royal Srivastava", 20, WINDOW_HEIGHT - 40)
+    local versionText = "v1.0"
     local versionWidth = footerFont:getWidth(versionText)
     love.graphics.print(versionText, WINDOW_WIDTH - versionWidth - 20, WINDOW_HEIGHT - 40)
 end
