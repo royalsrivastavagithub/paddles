@@ -256,12 +256,11 @@ function saveSettings()
         end
     end
     table.insert(lines, "}")
-    local f = io.open("settings.dat", "w")
-    if f then f:write(table.concat(lines, "\n")); f:close() end
+    love.filesystem.write("settings.dat", table.concat(lines, "\n"))
 end
 
 function loadSettings()
-    local f = loadfile("settings.dat")
+    local f = love.filesystem.load("settings.dat")
     if f then
         local ok, saved = pcall(f)
         if ok and saved then

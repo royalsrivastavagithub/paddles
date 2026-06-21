@@ -4,4 +4,5 @@ function love.conf(t)
     t.window.height = 720
     t.window.resizable = false
     t.window.vsync = true
+    t.identity = "paddles"
 end
