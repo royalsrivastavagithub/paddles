@@ -30,6 +30,7 @@ function love.load()
         splitController = false,
         mouseControl = false,
         soundEnabled = true,
+        trail = true,
         uiScale = 1.0,
         vSync = true,
         maxFPS = 0,

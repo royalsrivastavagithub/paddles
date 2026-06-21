@@ -37,6 +37,24 @@ local remainingLives = 0
 local aiDiff1 = nil
 local aiDiff2 = nil
 
+local TRAIL_LENGTH = 8
+local ballTrail = {}
+local paddle1Trail = {}
+local paddle2Trail = {}
+
+local function pushTrail(trail, x, y, w, h)
+    table.insert(trail, 1, {x = x, y = y, w = w, h = h})
+    if #trail > TRAIL_LENGTH then
+        table.remove(trail)
+    end
+end
+
+local function resetTrails()
+    for _, t in ipairs({ballTrail, paddle1Trail, paddle2Trail}) do
+        for i = #t, 1, -1 do table.remove(t) end
+    end
+end
+
 function game.enter(m, d, sd)
     mode = m
     difficulty = d
@@ -75,6 +93,7 @@ function game.enter(m, d, sd)
     aiDiff1 = nil
     aiDiff2 = nil
     ai.reset()
+    resetTrails()
 
     if mode == "singleplayer" then
         entities.setAngleRange(paddle2, difficulty)
@@ -163,6 +182,12 @@ function game.update(dt)
     updatePaddle1(dt)
     updatePaddle2(dt)
     updateBall(dt)
+
+    if settingsData.trail ~= false then
+        pushTrail(paddle1Trail, paddle1.x, paddle1.y, paddle1.width, paddle1.height)
+        pushTrail(paddle2Trail, paddle2.x, paddle2.y, paddle2.width, paddle2.height)
+        pushTrail(ballTrail, ball.x, ball.y, ball.width, ball.height)
+    end
 end
 
 function updatePaddle1(dt)
@@ -365,6 +390,25 @@ function game.draw()
         love.graphics.rectangle("fill", WINDOW_WIDTH / 2 - 2, i, 4, 12)
     end
 
+    if settingsData.trail ~= false then
+        for i, t in ipairs(paddle1Trail) do
+            local alpha = 1 - (i - 1) / TRAIL_LENGTH
+            love.graphics.setColor(p1c.r, p1c.g, p1c.b, alpha * 0.3)
+            love.graphics.rectangle("fill", t.x, t.y, t.w, t.h)
+        end
+        if not paddle2.dead then
+            for i, t in ipairs(paddle2Trail) do
+                local alpha = 1 - (i - 1) / TRAIL_LENGTH
+                love.graphics.setColor(p2c.r, p2c.g, p2c.b, alpha * 0.3)
+                love.graphics.rectangle("fill", t.x, t.y, t.w, t.h)
+            end
+        end
+        for i, t in ipairs(ballTrail) do
+            local alpha = 1 - (i - 1) / TRAIL_LENGTH
+            love.graphics.setColor(bc.r, bc.g, bc.b, alpha * 0.3)
+            love.graphics.rectangle("fill", t.x, t.y, t.w, t.h)
+        end
+    end
     love.graphics.setColor(p1c.r, p1c.g, p1c.b)
     love.graphics.rectangle("fill", paddle1.x, paddle1.y, paddle1.width, paddle1.height)
     if not paddle2.dead then
