@@ -105,7 +105,7 @@ function menu.draw()
     local footerFont = _font("assets/fonts/font.ttf", 24)
     love.graphics.setFont(footerFont)
     love.graphics.setColor(mc.r, mc.g, mc.b)
-    love.graphics.print("Author : Royal Srivastava", 20, WINDOW_HEIGHT - 64)
+    love.graphics.print("Author : Royal Srivastava", 20, WINDOW_HEIGHT - 76)
     love.graphics.print("font: Symtext by Pixel Sagas", 20, WINDOW_HEIGHT - 40)
     local versionText = "v1.0"
     local versionWidth = footerFont:getWidth(versionText)
