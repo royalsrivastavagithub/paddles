@@ -2,90 +2,115 @@
 
 A fast, polished Pong-style game built with the LÖVE 2D engine.
 
+## Screenshots
+
+![Gameplay](assets/pictures/gameplay.png)
+![Settings](assets/pictures/settings.png)
+![AI Selection](assets/pictures/aiselect.png)
+
 ## Overview
 
 `Paddles` is a local multiplayer and single-player Pong recreation featuring:
-- Singleplayer mode with adjustable difficulty
+- Singleplayer mode with 4 AI difficulties (Easy, Medium, Hard, God)
 - Local multiplayer mode
-- Bot vs Bot mode
+- Bot vs Bot mode (each bot can have its own difficulty)
 - In-game settings for controls, display, and gameplay
-- Customizable paddle, ball, and UI settings
+- Customizable paddle, ball, and UI colors
+- Standalone Windows executable and Linux installer available
 
 ## Features
 
 - Classic Pong gameplay with responsive paddle and ball physics
-- Multiple difficulties: Easy, Medium, Hard, God
+- Progressive AI difficulty: Easy is sluggish, Hard plays at full speed
+- Hall reverb on all sound effects
+- Configurable trail effect
 - Split controller support for shared gamepads
 - Mouse control option for Player 1
-- Adjustable ball speed, winning score, and frame limiter
-- Resolution and fullscreen settings
+- Adjustable ball speed, max speed, and winning score
+- Resolution, fullscreen, VSync, and frame limiter settings
 
 ## Installation
 
+### From source
+
 1. Install [LÖVE](https://love2d.org/) version 11.0 or later.
 2. Clone or download the repository.
-3. Open the project folder in your terminal.
-
-## Running the Game
-
-From the project root folder, run:
+3. Run from the project folder:
 
 ```bash
 love .
 ```
 
-If your system does not recognize `love`, use the full path to the LÖVE executable.
+### Pre-built packages
+
+Run `./scripts/package.sh` to generate a `dist/` folder containing:
+
+| Platform | Folder | How to run |
+|----------|--------|------------|
+| **Linux** | `dist/linux/` | `./launch.sh` or `sudo ./install.sh` for system-wide install |
+| **Windows** | `dist/windows/` | Double-click `paddles.exe` |
+| **Any (LÖVE)** | `dist/love/` | `love paddles.love` |
 
 ## Controls
 
 ### Menu Navigation
 - `Up` / `Down` arrows: move menu selection
 - `Enter` or `Space`: confirm selection
-- `Escape`: quit from the menu
+- `Escape`: back / quit from the menu
 - Gamepad `DPAD` and `A` buttons are supported
 
 ### Player Controls
 - Player 1: `W` = up, `S` = down
 - Player 2: `Up Arrow` = up, `Down Arrow` = down
 - If a gamepad is connected, Player 1 can also use the left stick or D-Pad.
-- With split controller enabled, both paddles can share the same gamepad.
+- With split controller enabled, both paddles can share the same gamepad (`lefty` / `righty` sticks).
 
 ### In-Game Pause
-- `Escape` or gamepad `Start` / `B` (depending on context) to pause / return
+- `Escape` or gamepad `Start` / `B` to pause / return
 
 ## Settings
 
 The settings screen allows you to customize:
-- Paddle sensitivity
-- Ball speed
-- Winning score
-- Display mode (Windowed / Fullscreen)
-- Resolution
-- VSync
-- Maximum FPS
+- Paddle sensitivity (only affects human players)
+- Ball speed and max ball speed
+- Winning score (3, 5, 7, 11, 21, or Infinite)
+- Display mode (Windowed / Fullscreen) and resolution
+- VSync and maximum FPS
 - Split controller mode
 - Mouse control
+- Trail effect length
+- Sound on/off
 - Font / UI scale
-- Color sliders for background, menu, paddles, ball, and score display
+- Color sliders for background, menu, paddles, ball, and score
 
 ## Project Structure
 
-- `main.lua` — main game loop and state manager
-- `conf.lua` — LÖVE window settings
-- `src/menu.lua` — main menu logic and drawing
-- `src/game/init.lua` — game state and update loop
-- `src/game/entities.lua` — paddle and ball physics
-- `src/settings.lua` — settings menu and value binding
-- `src/input.lua` — keyboard and gamepad input handling
-- `src/aiselect.lua` — bot difficulty selection menu
-- `assets/fonts/font.ttf` — game font asset
+```
+├── main.lua                 — game loop and state manager
+├── conf.lua                 — LÖVE window settings
+├── scripts/package.sh       — build script for distribution
+├── assets/
+│   ├── fonts/font.ttf       — game font
+│   ├── icons/paddles.png    — application icon
+│   └── pictures/            — screenshots
+└── src/
+    ├── menu.lua             — main menu
+    ├── aiselect.lua         — bot difficulty picker
+    ├── input.lua            — keyboard and gamepad input
+    ├── settings.lua         — settings menu
+    ├── sound.lua            — procedural sound generation
+    └── game/
+        ├── init.lua         — game state, update, and rendering
+        ├── entities.lua     — paddle and ball physics
+        └── ai.lua           — AI behavior per difficulty
+```
 
 ## Notes
 
 - The game uses a virtual resolution of `1280x720`.
-- `pong v0.9` is shown in the menu footer.
 - The repository is designed to run directly in LÖVE without additional build steps.
+- Run `./scripts/package.sh` to produce a standalone distribution.
 
 ## License
 
-This project does not include a license file. Add one if you want to clarify reuse terms.
+MIT — see [LICENSE](LICENSE) for details.
