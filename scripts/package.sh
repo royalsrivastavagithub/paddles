@@ -21,7 +21,7 @@ cp "$DIST/paddles.love" "$DIST/linux/paddles.love"
 
 cat > "$DIST/linux/paddles" << 'SCRIPT'
 #!/bin/sh
-DIR="$(cd "$(dirname "$0")" && pwd)"
+DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 exec love "$DIR/paddles.love" "$@"
 SCRIPT
 chmod +x "$DIST/linux/paddles"
@@ -67,6 +67,21 @@ sudo cp "$DIR/paddles.desktop" "$PREFIX/share/applications/paddles.desktop"
 echo "Done! Run 'paddles' to play."
 INSTALL
 chmod +x "$DIST/linux/install.sh"
+
+cat > "$DIST/linux/uninstall.sh" << 'UNINSTALL'
+#!/bin/sh
+set -e
+PREFIX="${1:-/usr/local}"
+
+echo "Removing Paddles..."
+sudo rm -f "$PREFIX/bin/paddles"
+sudo rm -rf /opt/paddles
+sudo rm -f "$PREFIX/share/applications/paddles.desktop"
+sudo rm -f "$PREFIX/share/icons/hicolor/256x256/apps/paddles.png"
+
+echo "Paddles uninstalled."
+UNINSTALL
+chmod +x "$DIST/linux/uninstall.sh"
 
 cat > "$DIST/linux/paddles.desktop" << 'DESKTOP'
 [Desktop Entry]
