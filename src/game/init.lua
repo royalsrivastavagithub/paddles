@@ -1,6 +1,7 @@
 local input = require("src.input")
 local entities = require("src.game.entities")
 local ai = require("src.game.ai")
+local sound = require("src.sound")
 
 local game = {}
 
@@ -44,6 +45,8 @@ function game.enter(m, d, sd)
 
     local p1s = settingsData.p1Sensitivity or 1.0
     local p2s = settingsData.p2Sensitivity or 1.0
+
+    entities.MAX_BALL_SPEED = settingsData.maxBallSpeed or 1200
 
     paddle1 = entities.newPaddle(entities.PADDLE_OFFSET, WINDOW_HEIGHT / 2 - entities.PADDLE_HEIGHT / 2, p1s)
     paddle2 = entities.newPaddle(WINDOW_WIDTH - entities.PADDLE_OFFSET - entities.PADDLE_WIDTH, WINDOW_HEIGHT / 2 - entities.PADDLE_HEIGHT / 2, p2s)
@@ -92,10 +95,14 @@ function game.update(dt)
             if #jsticks >= 1 then
                 local y = jsticks[1]:getGamepadAxis("lefty")
                 if y < -0.5 then
+                    local old = pauseSelection
                     pauseSelection = math.max(1, pauseSelection - 1)
+                    if pauseSelection ~= old then sound.playHighlight() end
                     pauseStickTimer = 0.2
                 elseif y > 0.5 then
+                    local old = pauseSelection
                     pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+                    if pauseSelection ~= old then sound.playHighlight() end
                     pauseStickTimer = 0.2
                 end
             end
@@ -143,7 +150,7 @@ function game.update(dt)
     speedTimer = speedTimer + dt
     if speedTimer >= entities.SPEED_INCREASE_INTERVAL then
         speedTimer = 0
-        ball.speed = ball.speed + entities.SPEED_INCREASE_AMOUNT
+        ball.speed = math.min(entities.MAX_BALL_SPEED, ball.speed + entities.SPEED_INCREASE_AMOUNT)
     end
 
     updatePaddle1(dt)
@@ -189,15 +196,22 @@ function updatePaddle2(dt)
 end
 
 function updateBall(dt)
-    local result, hitP2, hitP1 = entities.updateBall(ball, paddle1, paddle2, dt, WINDOW_WIDTH, WINDOW_HEIGHT)
+    local result, hitP2, hitP1, wallHit = entities.updateBall(ball, paddle1, paddle2, dt, WINDOW_WIDTH, WINDOW_HEIGHT)
+
+    if hitP1 then sound.playPaddle1(); sound.playBallBounce() end
+    if hitP2 then sound.playPaddle2(); sound.playBallBounce() end
+    if wallHit then sound.playBallBounce() end
+
     if result == "right_score" then
         paddle2.score = paddle2.score + 1
+        sound.playScore()
         if mode == "singleplayer" and difficulty == "god" and totalLives > 0 then
             remainingLives = totalLives
         end
         checkWin()
     elseif result == "left_score" then
         paddle1.score = paddle1.score + 1
+        sound.playScore()
         checkWin()
     end
 
@@ -211,6 +225,7 @@ end
 
 function startPaddleDeath()
     state = "gameover"
+    sound.playLose()
     godLosePhase = 1
     godLoseTimer = 3
 end
@@ -228,10 +243,13 @@ end
 function serveBall()
     ball.x = WINDOW_WIDTH / 2 - entities.BALL_SIZE / 2
     ball.y = WINDOW_HEIGHT / 2 - entities.BALL_SIZE / 2
-    local speedMap = {Slow = 0.5, Normal = 1.0, Fast = 2.0}
-    ball.speed = entities.BALL_SPEED * (speedMap[settingsData.ballSpeed] or 1.0)
+    local mult = settingsData.ballSpeed
+    if type(mult) == "string" then
+        local speedMap = {Slow = 0.5, Normal = 1.0, Fast = 2.0}
+        mult = speedMap[mult] or 1.0
+    end
+    ball.speed = entities.BALL_SPEED * (mult or 1.0)
 
-    local angle = math.rad(math.random(-30, 30))
     local dir = -1
     if paddle1.score + paddle2.score == 0 then
         if math.random() < 0.5 then dir = 1 end
@@ -239,14 +257,23 @@ function serveBall()
         dir = 1
     end
 
-    ball.dx = dir * math.cos(angle) * ball.speed
-    ball.dy = math.sin(angle) * ball.speed
+    ball.dx = dir * ball.speed
+    ball.dy = 0
     state = "playing"
 end
 
 function checkWin()
     if WINNING_SCORE > 0 and (paddle1.score >= WINNING_SCORE or paddle2.score >= WINNING_SCORE) then
         state = "gameover"
+        if mode == "singleplayer" then
+            if paddle2.score > paddle1.score then
+                sound.playLose()
+            else
+                sound.playWin()
+            end
+        else
+            sound.playWin()
+        end
     else
         entities.resetPositions(paddle1, paddle2, ball, WINDOW_WIDTH, WINDOW_HEIGHT)
         if remainingLives > 0 then
@@ -408,11 +435,21 @@ end
 
 function game.keypressed(key)
     if paused then
-        if key == "up" then pauseSelection = math.max(1, pauseSelection - 1)
-        elseif key == "down" then pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+        if key == "up" then
+            local old = pauseSelection
+            pauseSelection = math.max(1, pauseSelection - 1)
+            if pauseSelection ~= old then sound.playHighlight() end
+        elseif key == "down" then
+            local old = pauseSelection
+            pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+            if pauseSelection ~= old then sound.playHighlight() end
         elseif key == "return" or key == " " then
+            sound.playEnter()
             if pauseSelection == 1 then paused = false; love.mouse.setVisible(false) else backToMenu() end
-        elseif key == "escape" then paused = false; love.mouse.setVisible(false) end
+        elseif key == "escape" then
+            sound.playEscape()
+            paused = false; love.mouse.setVisible(false)
+        end
         return
     end
 
@@ -428,6 +465,7 @@ function game.keypressed(key)
 
     if state == "gameover" then
         if key == "escape" or key == "return" or key == " " then
+            sound.playEscape()
             if difficulty == "god" and paddle1.score > paddle2.score then
                 startGodLose()
             else
@@ -445,11 +483,21 @@ end
 
 function game.gamepadpressed(joystick, button)
     if paused then
-        if button == "dpup" then pauseSelection = math.max(1, pauseSelection - 1)
-        elseif button == "dpdown" then pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+        if button == "dpup" then
+            local old = pauseSelection
+            pauseSelection = math.max(1, pauseSelection - 1)
+            if pauseSelection ~= old then sound.playHighlight() end
+        elseif button == "dpdown" then
+            local old = pauseSelection
+            pauseSelection = math.min(#pauseItems, pauseSelection + 1)
+            if pauseSelection ~= old then sound.playHighlight() end
         elseif button == "a" then
+            sound.playEnter()
             if pauseSelection == 1 then paused = false; love.mouse.setVisible(false) else backToMenu() end
-        elseif button == "b" or button == "start" then paused = false; love.mouse.setVisible(false) end
+        elseif button == "b" or button == "start" then
+            sound.playEscape()
+            paused = false; love.mouse.setVisible(false)
+        end
         return
     end
 
@@ -471,6 +519,7 @@ function game.gamepadpressed(joystick, button)
 
     if state == "gameover" then
         if button == "start" or button == "a" then
+            sound.playEscape()
             if difficulty == "god" and paddle1.score > paddle2.score then
                 startGodLose()
             else

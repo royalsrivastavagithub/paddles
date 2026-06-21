@@ -60,10 +60,12 @@ function entities.updateBall(ball, p1, p2, dt, arenaW, arenaH)
     ball.x = ball.x + ball.dx * dt
     ball.y = ball.y + ball.dy * dt
 
+    local wallHit = false
     if ball.y <= 0 then
         ball.y = 0
         ball.dy = -ball.dy
-        local newSpeed = ball.speed * entities.BALL_SPEED_INCREASE
+        wallHit = true
+        local newSpeed = math.min(entities.MAX_BALL_SPEED, ball.speed * entities.BALL_SPEED_INCREASE)
         local factor = newSpeed / ball.speed
         ball.speed = newSpeed
         ball.dx = ball.dx * factor
@@ -71,7 +73,8 @@ function entities.updateBall(ball, p1, p2, dt, arenaW, arenaH)
     elseif ball.y + ball.height >= arenaH then
         ball.y = arenaH - ball.height
         ball.dy = -ball.dy
-        local newSpeed = ball.speed * entities.BALL_SPEED_INCREASE
+        wallHit = true
+        local newSpeed = math.min(entities.MAX_BALL_SPEED, ball.speed * entities.BALL_SPEED_INCREASE)
         local factor = newSpeed / ball.speed
         ball.speed = newSpeed
         ball.dx = ball.dx * factor
@@ -111,11 +114,11 @@ function entities.updateBall(ball, p1, p2, dt, arenaW, arenaH)
     end
 
     if ball.x + ball.width < 0 then
-        return "right_score", hitP2, hitP1
+        return "right_score", hitP2, hitP1, wallHit
     elseif ball.x > arenaW then
-        return "left_score", hitP2, hitP1
+        return "left_score", hitP2, hitP1, wallHit
     end
-    return nil, hitP2, hitP1
+    return nil, hitP2, hitP1, wallHit
 end
 
 function entities.checkCollision(a, b)
@@ -129,7 +132,7 @@ function entities.reflectBall(ball, paddle, dir)
     offset = entities.clamp(offset, -1, 1)
 
     local angle = (paddle.minAngle + math.abs(offset) * (paddle.maxAngle - paddle.minAngle)) * (offset >= 0 and 1 or -1)
-    ball.speed = ball.speed * entities.BALL_SPEED_INCREASE
+    ball.speed = math.min(entities.MAX_BALL_SPEED, ball.speed * entities.BALL_SPEED_INCREASE)
 
     ball.dx = dir * math.cos(angle) * ball.speed
     ball.dy = math.sin(angle) * ball.speed

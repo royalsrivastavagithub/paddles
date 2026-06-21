@@ -3,6 +3,7 @@ local game = require("src.game.init")
 local settings = require("src.settings")
 local input = require("src.input")
 local aiselect = require("src.aiselect")
+local sound = require("src.sound")
 
 local VIRTUAL_WIDTH = 1280
 local VIRTUAL_HEIGHT = 720
@@ -19,15 +20,16 @@ function love.load()
     math.randomseed(os.time())
 
     settingsData = {
-        difficulty = "medium",
         p1Sensitivity = 1.0,
         p2Sensitivity = 1.0,
-        ballSpeed = "Normal",
+        ballSpeed = 1.0,
+        maxBallSpeed = 1200,
         displayMode = "Windowed",
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
         mouseControl = false,
+        soundEnabled = true,
         uiScale = 1.0,
         vSync = true,
         maxFPS = 0,
@@ -47,6 +49,7 @@ function love.load()
     settings.applyDisplayModeRes()
 
     input.load()
+    sound.load()
     menu.load()
     state = "menu"
 end
@@ -220,7 +223,7 @@ function startGame(mode, diff)
         if p2d == "random" then p2d = pool[math.random(#pool)] end
         difficulty = {p1 = p1d, p2 = p2d}
     else
-        difficulty = diff or settingsData.difficulty
+        difficulty = diff or "medium"
     end
     input.setSplitMode(settingsData.splitController)
     switchState("playing")

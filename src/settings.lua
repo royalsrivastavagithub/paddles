@@ -1,5 +1,6 @@
 local settings = {}
 local input = require("src.input")
+local sound = require("src.sound")
 
 local WINDOW_WIDTH = 1280
 local WINDOW_HEIGHT = 720
@@ -38,6 +39,7 @@ local colorGroups = {
 local channels = {"r", "g", "b"}
 local items = {}
 local selectedIndex = 1
+local prevSelectedIndex = 1
 local scrollOffset = 0
 local stickTimer = 0
 local stickDelay = 0.2
@@ -49,7 +51,8 @@ local function buildItems()
     items = {
         { label = "P1 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 10.0, step = 0.1, key = "p1Sensitivity" },
         { label = "P2 Sensitivity",   type = "slider", value = 1.0, min = 0.5, max = 10.0, step = 0.1, key = "p2Sensitivity" },
-        { label = "Ball Speed",       type = "cycle",  value = "Normal", options = {"Slow", "Normal", "Fast"}, key = "ballSpeed" },
+        { label = "Ball Speed",       type = "slider", value = 1.0, min = 0.5, max = 1.5, step = 0.1, key = "ballSpeed" },
+        { label = "Max Ball Speed",   type = "slider", value = 1200, min = 600, max = 2000, step = 50, key = "maxBallSpeed" },
         { label = "Winning Score",    type = "cycle",  value = 7,   options = {3, 5, 7, 11, 21, 0}, key = "winningScore" },
         { label = "Display Mode",     type = "cycle",  value = "Windowed", options = {"Windowed", "Fullscreen"}, key = "displayMode" },
         { label = "Resolution",       type = "cycle",  value = "Display Native", options = {"Display Native", "720p (1280x720)", "1080p (1920x1080)", "1440p (2560x1440)", "4K (3840x2160)"}, key = "resolution" },
@@ -57,6 +60,7 @@ local function buildItems()
         { label = "Max FPS",          type = "cycle",  value = 0,     options = {0, 30, 60, 120, 144, 165, 240, 360, 480, 1024}, key = "maxFPS" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
         { label = "Mouse Control",    type = "toggle", value = false, key = "mouseControl" },
+        { label = "Sound",            type = "toggle", value = true,  key = "soundEnabled" },
         { label = "Font Size",        type = "slider", value = 1.0, min = 0.6, max = 1.8, step = 0.1, key = "uiScale" },
 
     }
@@ -102,10 +106,15 @@ end
 
 function settings.enter()
     selectedIndex = 1
+    prevSelectedIndex = 1
     scrollOffset = 0
     stickTimer = 0
     dragIndex = nil
     buildItems()
+    if type(_G.settingsData.ballSpeed) == "string" then
+        local speedMap = {Slow = 0.5, Normal = 1.0, Fast = 2.0}
+        _G.settingsData.ballSpeed = speedMap[_G.settingsData.ballSpeed] or 1.0
+    end
     for _, item in ipairs(items) do
         if item.key and item.channel then
             local color = _G.settingsData[item.key]
@@ -133,12 +142,14 @@ function settings.exit()
 end
 
 function moveSelection(dir)
+    local orig = selectedIndex
     local old = selectedIndex
     repeat
         selectedIndex = math.max(1, math.min(#items, selectedIndex + dir))
         if selectedIndex == old then break end
         old = selectedIndex
     until items[selectedIndex].type ~= "header"
+    if selectedIndex ~= orig then sound.playHighlight() end
     scrollToSelected()
 end
 
@@ -244,11 +255,16 @@ function settings.keypressed(key)
     elseif key == "return" or key == " " then
         local item = items[selectedIndex]
         if item.type == "action" then
-            if item.action == "back" then backToMenu()
-            elseif item.action == "resetSettings" then resetAllSettings() end
+            if item.action == "back" then
+                sound.playEscape()
+                backToMenu()
+            elseif item.action == "resetSettings" then
+                sound.playEnter()
+                resetAllSettings()
+            end
         elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
         elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
-    elseif key == "escape" then backToMenu() end
+    elseif key == "escape" then sound.playEscape(); backToMenu() end
 end
 
 function settings.gamepadpressed(joystick, button)
@@ -259,11 +275,16 @@ function settings.gamepadpressed(joystick, button)
     elseif button == "a" then
         local item = items[selectedIndex]
         if item.type == "action" then
-            if item.action == "back" then backToMenu()
-            elseif item.action == "resetSettings" then resetAllSettings() end
+            if item.action == "back" then
+                sound.playEscape()
+                backToMenu()
+            elseif item.action == "resetSettings" then
+                sound.playEnter()
+                resetAllSettings()
+            end
         elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
         elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
-    elseif button == "b" then backToMenu() end
+    elseif button == "b" then sound.playEscape(); backToMenu() end
 end
 
 function settings.mousepressed(x, y, button)
@@ -299,8 +320,13 @@ function settings.mousepressed(x, y, button)
                         dragIndex = i
                     end
                     elseif item.type == "action" then
-                        if item.action == "back" then backToMenu()
-                        elseif item.action == "resetSettings" then resetAllSettings() end
+                        if item.action == "back" then
+                            sound.playEscape()
+                            backToMenu()
+                        elseif item.action == "resetSettings" then
+                            sound.playEnter()
+                            resetAllSettings()
+                        end
                 elseif item.type == "toggle" then item.value = not item.value; applyItem(item)
                 elseif item.type == "cycle" then cycleItem(item, 1); applyItem(item) end
                 return
@@ -330,7 +356,10 @@ function settings.mousemoved(x, y)
         if item.type ~= "header" then
             local itemY = 115 + (i - 1 - scrollOffset) * 45
             if y >= itemY and y <= itemY + 35 then
-                selectedIndex = i
+                if i ~= selectedIndex then
+                    selectedIndex = i
+                    sound.playHighlight()
+                end
                 break
             end
         end
@@ -354,11 +383,13 @@ function settings.mousereleased()
 end
 
 function settings.wheelmoved(y)
+    local old = selectedIndex
     if y > 0 then
         selectedIndex = math.max(1, selectedIndex - 1)
     elseif y < 0 then
         selectedIndex = math.min(#items, selectedIndex + 1)
     end
+    if selectedIndex ~= old then sound.playHighlight() end
     scrollToSelected()
 end
 
@@ -366,15 +397,16 @@ settings.applyDisplayModeRes = applyDisplayModeRes
 
 function resetAllSettings()
     _G.settingsData = {
-        difficulty = "medium",
         p1Sensitivity = 1.0,
         p2Sensitivity = 1.0,
-        ballSpeed = "Normal",
+        ballSpeed = 1.0,
+        maxBallSpeed = 1200,
         displayMode = "Windowed",
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
         mouseControl = false,
+        soundEnabled = true,
         uiScale = 1.0,
         vSync = true,
         maxFPS = 0,
