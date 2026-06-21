@@ -49,7 +49,7 @@ function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy, isLeft)
                 local offsetRange = paddle.height * (0.15 + speedFactor * 0.4)
                 st.fixedTargetY = (math.random() - 0.5) * offsetRange
             end
-            st.moveSpeed = paddle.speed * (0.7 - speedFactor * 0.3)
+            st.moveSpeed = paddle.speed * (0.5 - speedFactor * 0.25)
             st.deadZonePx = paddle.height * (0.05 + speedFactor * 0.35)
         end
 
@@ -75,7 +75,7 @@ function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy, isLeft)
             else
                 st.fixedTargetY = (math.random() - 0.5) * paddle.height * 0.2
             end
-            st.moveSpeed = paddle.speed * 0.8
+            st.moveSpeed = paddle.speed * 0.7
             st.deadZonePx = paddle.height * 0.08
         end
         st.reactionTimer = 1
@@ -98,7 +98,7 @@ function ai.update(paddle, ball, difficulty, dt, arenaH, playerDy, isLeft)
                 st.targetOffset = (math.random() > 0.5 and 0.7 or -0.7)
             end
             st.fixedTargetY = nil
-            st.moveSpeed = paddle.speed * 0.9
+            st.moveSpeed = paddle.speed * 1.0
             st.deadZonePx = 10
         end
         st.reactionTimer = 1
