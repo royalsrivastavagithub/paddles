@@ -124,7 +124,12 @@ function settings.enter()
             end
         elseif item.key then
             local val = _G.settingsData[item.key]
-            if val ~= nil then item.value = val end
+            if val ~= nil then
+                if item.key == "trail" and type(val) == "boolean" then
+                    val = val and 6 or 0
+                end
+                item.value = val
+            end
         end
     end
 end
