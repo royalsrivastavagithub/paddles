@@ -4,9 +4,9 @@ A fast, polished Pong-style game built with the LÖVE 2D engine.
 
 ## Screenshots
 
-![Gameplay](assets/pictures/gameplay.png)
+![Menu](assets/pictures/menu.png)
 ![Settings](assets/pictures/settings.png)
-![AI Selection](assets/pictures/aiselect.png)
+![gameplay](assets/pictures/gameplay.png)
 
 ## Overview
 
