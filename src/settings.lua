@@ -56,7 +56,7 @@ local function buildItems()
         { label = "VSync",            type = "toggle", value = true,  key = "vSync" },
         { label = "Max FPS",          type = "cycle",  value = 0,     options = {0, 30, 60, 120, 144, 165, 240, 360, 480, 1024}, key = "maxFPS" },
         { label = "Split Controller", type = "toggle", value = false, key = "splitController" },
-        { label = "Mouse Control",    type = "toggle", value = true,  key = "mouseControl" },
+        { label = "Mouse Control",    type = "toggle", value = false, key = "mouseControl" },
         { label = "Font Size",        type = "slider", value = 1.0, min = 0.6, max = 1.8, step = 0.1, key = "uiScale" },
 
     }
@@ -374,7 +374,7 @@ function resetAllSettings()
         resolution = "Display Native",
         winningScore = 7,
         splitController = false,
-        mouseControl = true,
+        mouseControl = false,
         uiScale = 1.0,
         vSync = true,
         maxFPS = 0,
